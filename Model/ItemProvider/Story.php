@@ -1,13 +1,11 @@
 <?php
+
 namespace MediaLounge\Storyblok\Model\ItemProvider;
 
-use Storyblok\ClientFactory;
-use Magento\Store\Model\ScopeInterface;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Sitemap\Model\SitemapItemInterfaceFactory;
 use Magento\Sitemap\Model\ItemProvider\ConfigReaderInterface;
 use Magento\Sitemap\Model\ItemProvider\ItemProviderInterface;
+use MediaLounge\Storyblok\Model\ClientFactory;
 
 class Story implements ItemProviderInterface
 {
@@ -28,29 +26,14 @@ class Story implements ItemProviderInterface
      */
     private $storyblokClient;
 
-    /**
-     * @var StoreManagerInterface
-     */
-    private $storeManager;
-
     public function __construct(
         ConfigReaderInterface $configReader,
         SitemapItemInterfaceFactory $itemFactory,
-        ScopeConfigInterface $scopeConfig,
-        ClientFactory $storyblokClient,
-        StoreManagerInterface $storeManager
+        ClientFactory $clientFactory
     ) {
         $this->itemFactory = $itemFactory;
         $this->configReader = $configReader;
-        $this->scopeConfig = $scopeConfig;
-        $this->storeManager = $storeManager;
-        $this->storyblokClient = $storyblokClient->create([
-            'apiKey' => $scopeConfig->getValue(
-                'storyblok/general/api_key',
-                ScopeInterface::SCOPE_STORE,
-                $this->storeManager->getStore()->getId()
-            )
-        ]);
+        $this->storyblokClient = $clientFactory->create();
     }
 
     public function getItems($storeId)
