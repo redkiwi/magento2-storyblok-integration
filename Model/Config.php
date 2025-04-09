@@ -15,7 +15,6 @@ class Config
     const DEFAULT_FOLDER_NAME = 'storyblok/general/default_folder_name';
     const DEFAULT_STORE_CODE = 'storyblok/general/default_store_code';
     const DEFAULT_STORE_NAME = 'storyblok/general/default_store_name';
-    const STORE_FINDER_SLUG_CONFIG_PATH = 'mageworx_locations/product_page/store_locator_slug';
     const PRODUCT_LIST_SLUG_CONFIG_PATH = 'storyblok/general/product_list_slug';
 
     public function __construct(
@@ -34,14 +33,6 @@ class Config
     {
         return (string)$this->scopeConfig->getValue(
             self::HOME_SLUG_CONFIG_PATH,
-            ScopeInterface::SCOPE_STORE
-        );
-    }
-
-    public function storeFinderSlug(): string
-    {
-        return (string)$this->scopeConfig->getValue(
-            self::STORE_FINDER_SLUG_CONFIG_PATH,
             ScopeInterface::SCOPE_STORE
         );
     }

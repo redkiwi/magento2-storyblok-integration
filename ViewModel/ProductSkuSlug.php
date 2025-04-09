@@ -8,14 +8,14 @@ use Magento\Framework\App\Request\Http;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use MediaLounge\Storyblok\Model\Config;
 
 class ProductSkuSlug implements ArgumentInterface
 {
     public function __construct(
         private readonly Http $request,
         private readonly ProductRepository $productRepository,
-        private readonly ScopeConfigInterface $scopeConfig,
-        private readonly StoreManagerInterface $storeManager
+        private readonly Config $config
     ) {}
 
     public function __toString(): string
@@ -26,16 +26,8 @@ class ProductSkuSlug implements ArgumentInterface
             $this->request->getControllerName() === 'product' &&
             $this->request->getParam('id')
         ) {
-            $slug = $this->scopeConfig->getValue(
-                'storyblok/general/product_list_slug',
-                ScopeInterface::SCOPE_STORE,
-                $this->storeManager->getStore()->getId()
-            );
-            $slugPrefix = $this->scopeConfig->getValue(
-                'storyblok/general/slug_prefix',
-                ScopeInterface::SCOPE_STORE,
-                $this->storeManager->getStore()->getId()
-            );
+            $slug = $this->config->productListSlug();
+            $slugPrefix = $this->config->slugPrefix();
             $product = $this->productRepository->getById($this->request->getParam('id'));
             $url = "{$slugPrefix}/{$slug}/{$product->getUrlKey()}";
         }
