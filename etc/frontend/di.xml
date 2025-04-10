@@ -24,4 +24,11 @@
             </argument>
         </arguments>
     </type>
+
+    <type name="Magento\Theme\Block\Html\Breadcrumbs">
+        <plugin
+            name="redkiwi.magentotheme.breadcrumbs"
+            type="MediaLounge\Storyblok\Plugin\StoryblokBreadcrumbs"
+        />
+    </type>
 </config>
