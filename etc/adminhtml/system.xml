@@ -36,7 +36,66 @@
                         <field id="storyblok/general/enabled">1</field>
                     </depends>
                 </field>
+
+                <field
+                    id="default_group_code"
+                    translate="label comment"
+                    type="text"
+                    sortOrder="100"
+                    showInDefault="1"
+                    showInWebsite="1"
+                    showInStore="1"
+                >
+                    <label>Default group code</label>
+                </field>
+                <field
+                    id="default_folder_name"
+                    translate="label comment"
+                    type="text"
+                    sortOrder="100"
+                    showInDefault="1"
+                    showInWebsite="1"
+                    showInStore="1"
+                >
+                    <label>Default storyblok folder name (used as fallback)</label>
+                </field>
+                <field
+                    id="home_slug"
+                    translate="label comment"
+                    type="text"
+                    sortOrder="110"
+                    showInDefault="1"
+                    showInWebsite="1"
+                    showInStore="1"
+                >
+                    <label>Home slug</label>
+                </field>
+                <field
+                    id="product_list_slug"
+                    translate="label comment"
+                    type="text"
+                    sortOrder="115"
+                    showInDefault="1"
+                    showInWebsite="1"
+                    showInStore="1"
+                >
+                    <label>Product list slug</label>
+                </field>
+                <field
+                    id="data_debug"
+                    translate="label comment"
+                    type="select"
+                    sortOrder="120"
+                    showInDefault="1"
+                    showInWebsite="1"
+                    showInStore="1"
+                >
+                    <label>Enable data debug</label>
+                    <comment>Data is show in JSON format. DO NOT USE IN PRODUCTION!</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
             </group>
+
             <group id="home_page" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Home Page</label>
                 <field id="home_slug" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
