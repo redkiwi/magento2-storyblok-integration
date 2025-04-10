@@ -24,4 +24,10 @@
             </argument>
         </arguments>
     </type>
+
+    <type name="MediaLounge\Storyblok\Controller\Index\Index">
+        <plugin name="modify_storyblok_robots"
+                type="MediaLounge\Storyblok\Plugin\StoryblokRobotsTag"
+                sortOrder="10"/>
+    </type>
 </config>
