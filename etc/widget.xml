@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<widgets
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd"
+>
+    <widget class="MediaLounge\Storyblok\Block\Widget\Storyblok" id="storyblok_container">
+        <label translate="true">Storyblok Container</label>
+        <description translate="true">Used to add dynamic content from Storyblok.</description>
+        <parameters>
+            <parameter name="slug" sort_order="10" visible="true" xsi:type="text">
+                <label translate="true">Slug</label>
+                <description><![CDATA[Leave empty to use the current page identifier (or URL part) as slug.]]></description>
+            </parameter>
+        </parameters>
+    </widget>
+</widgets>
