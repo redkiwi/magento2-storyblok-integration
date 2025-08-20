@@ -36,6 +36,20 @@
                         <field id="storyblok/general/enabled">1</field>
                     </depends>
                 </field>
+                <field id="language" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Language Code</label>
+                    <comment>Storyblok language code (e.g. nl-NL, de-DE). Leave empty to use transformed locale (underscore replaced with dash).</comment>
+                    <depends>
+                        <field id="storyblok/general/enabled">1</field>
+                    </depends>
+                </field>
+                <field id="fallback_language" translate="label comment" type="text" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Fallback Language</label>
+                    <comment>Fallback language code (e.g. nl, de). Leave empty to use language part of locale.</comment>
+                    <depends>
+                        <field id="storyblok/general/enabled">1</field>
+                    </depends>
+                </field>
             </group>
             <group id="home_page" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Home Page</label>

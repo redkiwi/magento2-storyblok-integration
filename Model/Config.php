@@ -6,15 +6,19 @@ namespace MediaLounge\Storyblok\Model;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 
 class Config
 {
     const API_KEY_CONFIG_PATH = 'storyblok/general/api_key';
     const SLUG_PREFIX_CONFIG_PATH = 'storyblok/general/slug_prefix';
     const HOME_SLUG_CONFIG_PATH = 'storyblok/home_page/home_slug';
+    const LANGUAGE_CONFIG_PATH = 'storyblok/general/language';
+    const FALLBACK_LANGUAGE_CONFIG_PATH = 'storyblok/general/fallback_language';
 
     public function __construct(
-        private readonly ScopeConfigInterface $scopeConfig
+        private readonly ScopeConfigInterface $scopeConfig,
+        private readonly StoreManagerInterface $storeManager
     ) {}
 
     public function apiKey(): string
@@ -39,5 +43,46 @@ class Config
             self::HOME_SLUG_CONFIG_PATH,
             ScopeInterface::SCOPE_STORE
         );
+    }
+
+    public function locale(): string
+    {
+        return (string)$this->scopeConfig->getValue(
+            'general/locale/code',
+            ScopeInterface::SCOPE_STORE,
+            $this->storeManager->getStore()->getId()
+        );
+    }
+
+    public function language(): string
+    {
+        $configured = $this->scopeConfig->getValue(
+            self::LANGUAGE_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
+
+        if ($configured) {
+            return (string)$configured;
+        }
+
+        // Transform locale: nl_NL → nl-NL
+        return str_replace('_', '-', $this->locale());
+    }
+
+    public function fallbackLanguage(): string
+    {
+        $configured = $this->scopeConfig->getValue(
+            self::FALLBACK_LANGUAGE_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
+
+        if ($configured) {
+            return (string)$configured;
+        }
+
+        // Extract language code: nl_NL → nl
+        $locale = $this->locale();
+        $underscorePos = strpos($locale, '_');
+        return $underscorePos !== false ? substr($locale, 0, $underscorePos) : $locale;
     }
 }

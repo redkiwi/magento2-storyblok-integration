@@ -30,6 +30,10 @@ class ClientFactory
         );
         $client = $this->clientFactory->create($data);
 
+        // Always set language and fallback language
+        $client->language($this->config->language());
+        $client->fallbackLanguage($this->config->fallbackLanguage());
+
         return $client;
     }
 }
