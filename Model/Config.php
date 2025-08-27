@@ -13,6 +13,7 @@ class Config
     const API_KEY_CONFIG_PATH = 'storyblok/general/api_key';
     const SLUG_PREFIX_CONFIG_PATH = 'storyblok/general/slug_prefix';
     const HOME_SLUG_CONFIG_PATH = 'storyblok/home_page/home_slug';
+    const RESOLVE_LINKS_CONFIG_PATH = 'storyblok/general/resolve_links';
     const LANGUAGE_CONFIG_PATH = 'storyblok/general/language';
     const FALLBACK_LANGUAGE_CONFIG_PATH = 'storyblok/general/fallback_language';
 
@@ -41,6 +42,14 @@ class Config
     {
         return (string)$this->scopeConfig->getValue(
             self::HOME_SLUG_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
+    }
+
+    public function resolveLinks(): string
+    {
+        return (string)$this->scopeConfig->getValue(
+            self::RESOLVE_LINKS_CONFIG_PATH,
             ScopeInterface::SCOPE_STORE
         );
     }

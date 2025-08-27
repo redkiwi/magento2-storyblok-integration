@@ -36,6 +36,19 @@
                         <field id="storyblok/general/enabled">1</field>
                     </depends>
                 </field>
+                <field id="resolve_links" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Resolve Links</label>
+                    <source_model>MediaLounge\Storyblok\Model\Config\Source\ResolveLinks</source_model>
+                    <comment><![CDATA[
+                        <strong>URL:</strong> Returns translated URLs for internal links (recommended for multilingual sites, max 500 links)<br/>
+                        <strong>Link:</strong> Returns additional metadata like parent_id, is_folder (max 500 links)<br/>
+                        <strong>Story:</strong> Returns full story content (heavy performance impact, max 50 links)<br/>
+                        <strong>Disabled:</strong> No link resolution, links remain as UUIDs
+                    ]]></comment>
+                    <depends>
+                        <field id="storyblok/general/enabled">1</field>
+                    </depends>
+                </field>
                 <field id="language" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Language Code</label>
                     <comment>Storyblok language code (e.g. nl-NL, de-DE). Leave empty to use transformed locale (underscore replaced with dash).</comment>

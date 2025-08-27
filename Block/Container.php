@@ -2,44 +2,22 @@
 
 namespace MediaLounge\Storyblok\Block;
 
-use Storyblok\ApiException;
 use Magento\Framework\View\FileSystem;
-use Storyblok\Client as StoryblokClient;
 use Magento\Framework\View\Element\AbstractBlock;
 use MediaLounge\Storyblok\Block\Container\Element;
 use Magento\Framework\DataObject\IdentityInterface;
 use Magento\Framework\View\Element\Template\Context;
-use MediaLounge\Storyblok\Model\{ClientFactory, PrefixSlug};
+use MediaLounge\Storyblok\Model\StoryRepository;
 
 class Container extends \Magento\Framework\View\Element\Template implements IdentityInterface
 {
-    /**
-     * @var StoryblokClient
-     */
-    private $storyblokClient;
-
-    /**
-     * @var FileSystem
-     */
-    private $viewFileSystem;
-
-    /**
-     * @var PrefixSlug
-     */
-    private $prefixSlug;
-
     public function __construct(
-        FileSystem $viewFileSystem,
-        ClientFactory $clientFactory,
-        PrefixSlug $prefixSlug,
+        private readonly FileSystem $viewFileSystem,
+        private readonly StoryRepository $storyRepository,
         Context $context,
         array $data = []
     ) {
         parent::__construct($context, $data);
-
-        $this->viewFileSystem = $viewFileSystem;
-        $this->storyblokClient = $clientFactory->create();
-        $this->prefixSlug = $prefixSlug;
     }
 
     public function getCacheLifetime()
@@ -74,16 +52,9 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
     private function getStory(): array
     {
         if (!$this->getData('story')) {
-            try {
-                $slug = $this->getSlug();
-                $slug = ($this->prefixSlug)($slug);
-                $storyblokClient = $this->storyblokClient->getStoryBySlug($slug);
-                $data = $storyblokClient->getBody();
-
-                $this->setData('story', $data['story']);
-            } catch (ApiException $e) {
-                return [];
-            }
+            $slug = $this->getSlug();
+            $story = $this->storyRepository->getStoryBySlug($slug);
+            $this->setData('story', $story);
         }
 
         return $this->getData('story');

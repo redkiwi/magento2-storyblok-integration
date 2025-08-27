@@ -30,6 +30,12 @@ class ClientFactory
         );
         $client = $this->clientFactory->create($data);
 
+        // Apply resolve_links configuration if set
+        $resolveLinks = $this->config->resolveLinks();
+        if (!empty($resolveLinks)) {
+            $client->resolveLinks($resolveLinks);
+        }
+
         // Always set language and fallback language
         $client->language($this->config->language());
         $client->fallbackLanguage($this->config->fallbackLanguage());
