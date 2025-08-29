@@ -16,6 +16,7 @@ class Config
     const RESOLVE_LINKS_CONFIG_PATH = 'storyblok/general/resolve_links';
     const LANGUAGE_CONFIG_PATH = 'storyblok/general/language';
     const FALLBACK_LANGUAGE_CONFIG_PATH = 'storyblok/general/fallback_language';
+    const EXCLUDED_CONTENT_TYPES_CONFIG_PATH = 'storyblok/general/excluded_content_types';
 
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig,
@@ -93,5 +94,21 @@ class Config
         $locale = $this->locale();
         $underscorePos = strpos($locale, '_');
         return $underscorePos !== false ? substr($locale, 0, $underscorePos) : $locale;
+    }
+
+    public function excludedContentTypes(): array
+    {
+        $configured = $this->scopeConfig->getValue(
+            self::EXCLUDED_CONTENT_TYPES_CONFIG_PATH,
+            ScopeConfigInterface::SCOPE_TYPE_DEFAULT
+        );
+
+        if (empty($configured)) {
+            return [];
+        }
+
+        // Split by newlines and trim each line
+        $types = explode("\n", (string)$configured);
+        return array_filter(array_map('trim', $types));
     }
 }

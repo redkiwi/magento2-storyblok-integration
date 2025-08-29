@@ -63,6 +63,13 @@
                         <field id="storyblok/general/enabled">1</field>
                     </depends>
                 </field>
+                <field id="excluded_content_types" translate="label comment" type="textarea" sortOrder="80" showInDefault="1">
+                    <label>Excluded Content Types</label>
+                    <comment>Content types that should not be routed (one per line). These will not be accessible via direct URLs. Example: download</comment>
+                    <depends>
+                        <field id="storyblok/general/enabled">1</field>
+                    </depends>
+                </field>
             </group>
             <group id="home_page" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Home Page</label>

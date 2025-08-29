@@ -4,6 +4,7 @@
         <storyblok>
             <general>
                 <resolve_links>url</resolve_links>
+                <excluded_content_types></excluded_content_types>
             </general>
             <home_page>
                 <home_slug>home</home_slug>

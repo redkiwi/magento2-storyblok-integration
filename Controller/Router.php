@@ -7,13 +7,15 @@ use Magento\Framework\App\Action\Forward;
 use Magento\Framework\App\ActionInterface;
 use Magento\Framework\App\RouterInterface;
 use Magento\Framework\App\RequestInterface;
+use MediaLounge\Storyblok\Model\Config;
 use MediaLounge\Storyblok\Model\StoryRepository;
 
 class Router implements RouterInterface
 {
     public function __construct(
         private readonly ActionFactory $actionFactory,
-        private readonly StoryRepository $storyRepository
+        private readonly StoryRepository $storyRepository,
+        private readonly Config $config
     ) {}
 
     public function match(RequestInterface $request): ?ActionInterface
@@ -23,6 +25,15 @@ class Router implements RouterInterface
         $story = $this->storyRepository->getStoryBySlug($identifier, $bypassCache);
 
         if (!empty($story)) {
+            // Check if the content type is excluded
+            $excludedTypes = $this->config->excludedContentTypes();
+            if (
+                !empty($story['content']['component']) &&
+                in_array($story['content']['component'], $excludedTypes)
+            ) {
+                return null;
+            }
+
             $request
                 ->setModuleName('storyblok')
                 ->setControllerName('index')
