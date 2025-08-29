@@ -8,12 +8,16 @@ use MediaLounge\Storyblok\Block\Container\Element;
 use Magento\Framework\DataObject\IdentityInterface;
 use Magento\Framework\View\Element\Template\Context;
 use MediaLounge\Storyblok\Model\StoryRepository;
+use Psr\Log\LoggerInterface;
+use Magento\Framework\App\State;
 
 class Container extends \Magento\Framework\View\Element\Template implements IdentityInterface
 {
     public function __construct(
         private readonly FileSystem $viewFileSystem,
         private readonly StoryRepository $storyRepository,
+        private readonly LoggerInterface $logger,
+        private readonly State $appState,
         Context $context,
         array $data = []
     ) {
@@ -65,7 +69,7 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
         return count($data) !== count($data, COUNT_RECURSIVE);
     }
 
-    private function createBlockFromData(array $blockData): Element
+    private function createBlockFromData(array $blockData): ?Element
     {
         $block = $this->getLayout()
             ->createBlock(
@@ -76,16 +80,24 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
             )
             ->setData($blockData);
 
-        $templatePath = $this->viewFileSystem->getTemplateFileName(
-            "MediaLounge_Storyblok::story/{$blockData['component']}.phtml"
-        );
+        $templateName = "MediaLounge_Storyblok::story/{$blockData['component']}.phtml";
+        $templatePath = $this->viewFileSystem->getTemplateFileName($templateName);
 
         if ($templatePath) {
-            $block->setTemplate("MediaLounge_Storyblok::story/{$blockData['component']}.phtml");
+            $block->setTemplate($templateName);
         } else {
-            $block->setTemplate('MediaLounge_Storyblok::story/debug.phtml')->addData([
-                'original_template' => "MediaLounge_Storyblok::story/{$blockData['component']}.phtml"
-            ]);
+            $this->logger->warning(
+                'Storyblok template missing',
+                ['template' => $templateName]
+            );
+
+            if ($this->appState->getMode() !== State::MODE_PRODUCTION) {
+                $block->setTemplate('MediaLounge_Storyblok::story/debug.phtml')->addData([
+                    'original_template' => $templateName
+                ]);
+            } else {
+                return null;
+            }
         }
 
         $this->appendChildBlocks($block, $blockData);
@@ -105,7 +117,9 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
 
                     $childBlock = $this->createBlockFromData($childData);
 
-                    $parentBlock->append($childBlock);
+                    if ($childBlock !== null) {
+                        $parentBlock->append($childBlock);
+                    }
                 }
             }
         }
@@ -119,7 +133,9 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
             $blockData = $storyData['content'] ?? [];
             $parentBlock = $this->createBlockFromData($blockData);
 
-            return $parentBlock->toHtml();
+            if ($parentBlock !== null) {
+                return $parentBlock->toHtml();
+            }
         }
 
         return '';
