@@ -19,6 +19,7 @@ class StoryRepository
         private readonly SerializerInterface $serializer,
         private readonly PrefixSlug $prefixSlug,
         private readonly LinkRepository $linkRepository,
+        private readonly Config $config,
         private readonly LoggerInterface $logger
     ) {
         $this->storyblokClient = $this->clientFactory->create();
@@ -30,18 +31,20 @@ class StoryRepository
 
         try {
             $data = null;
+            $language = $this->config->language();
 
             if (!$bypassCache) {
-                $data = $this->cache->load($identifier);
+                $data = $this->cache->load("{$identifier}_{$language}");
             }
 
             if (!$data || $bypassCache) {
+                $this->storyblokClient->language($language);
                 $response = $this->storyblokClient->getStoryBySlug($identifier);
                 $responseBody = $response->getBody();
                 $data = $this->serializer->serialize($responseBody);
 
                 if (!$bypassCache && !empty($responseBody['story'])) {
-                    $this->cache->save($data, $identifier, [
+                    $this->cache->save($data, "{$identifier}_{$language}", [
                         "storyblok_{$responseBody['story']['id']}"
                     ]);
                 }
