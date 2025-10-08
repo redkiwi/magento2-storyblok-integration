@@ -5,7 +5,7 @@ namespace MediaLounge\Storyblok\Model\ItemProvider;
 use Magento\Sitemap\Model\SitemapItemInterfaceFactory;
 use Magento\Sitemap\Model\ItemProvider\ConfigReaderInterface;
 use Magento\Sitemap\Model\ItemProvider\ItemProviderInterface;
-use MediaLounge\Storyblok\Model\ClientFactory;
+use MediaLounge\Storyblok\Model\{Config, ClientFactory};
 
 class Story implements ItemProviderInterface
 {
@@ -22,6 +22,11 @@ class Story implements ItemProviderInterface
     private $configReader;
 
     /**
+     * @var Config
+     */
+    private $config;
+
+    /**
      * @var \Storyblok\Client
      */
     private $storyblokClient;
@@ -29,16 +34,18 @@ class Story implements ItemProviderInterface
     public function __construct(
         ConfigReaderInterface $configReader,
         SitemapItemInterfaceFactory $itemFactory,
-        ClientFactory $clientFactory
+        ClientFactory $clientFactory,
+        Config $config
     ) {
         $this->itemFactory = $itemFactory;
         $this->configReader = $configReader;
         $this->storyblokClient = $clientFactory->create();
+        $this->config = $config;
     }
 
     public function getItems($storeId)
     {
-        $response = $this->getStories();
+        $response = $this->getStories(1, $storeId);
         $stories = $response->getBody()['stories'];
 
         $totalPages = $response->getHeaders()['Total'][0] / self::STORIES_PER_PAGE;
@@ -48,7 +55,7 @@ class Story implements ItemProviderInterface
             $paginatedStories = [];
 
             for ($page = 2; $page <= $totalPages; $page++) {
-                $pageResponse = $this->getStories($page);
+                $pageResponse = $this->getStories($page, $storeId);
                 $paginatedStories = $pageResponse->getBody()['stories'];
             }
 
@@ -67,8 +74,11 @@ class Story implements ItemProviderInterface
         return $items;
     }
 
-    private function getStories(int $page = 1): \Storyblok\Client
+    private function getStories(int $page = 1, $storeId = null): \Storyblok\Client
     {
+        if ($storeId && $this->config->language()) {
+            $this->storyblokClient->language($this->config->language());
+        }
         $response = $this->storyblokClient->getStories([
             'page' => $page,
             'per_page' => self::STORIES_PER_PAGE,
