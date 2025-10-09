@@ -45,7 +45,7 @@ class Story implements ItemProviderInterface
 
     public function getItems($storeId)
     {
-        $response = $this->getStories(1, $storeId);
+        $response = $this->getStories();
         $stories = $response->getBody()['stories'];
 
         $totalPages = $response->getHeaders()['Total'][0] / self::STORIES_PER_PAGE;
@@ -55,7 +55,7 @@ class Story implements ItemProviderInterface
             $paginatedStories = [];
 
             for ($page = 2; $page <= $totalPages; $page++) {
-                $pageResponse = $this->getStories($page, $storeId);
+                $pageResponse = $this->getStories($page);
                 $paginatedStories = $pageResponse->getBody()['stories'];
             }
 
@@ -74,11 +74,9 @@ class Story implements ItemProviderInterface
         return $items;
     }
 
-    private function getStories(int $page = 1, $storeId = null): \Storyblok\Client
+    private function getStories(int $page = 1): \Storyblok\Client
     {
-        if ($storeId && $this->config->language()) {
-            $this->storyblokClient->language($this->config->language());
-        }
+        $this->storyblokClient->language($this->config->language());
         $response = $this->storyblokClient->getStories([
             'page' => $page,
             'per_page' => self::STORIES_PER_PAGE,

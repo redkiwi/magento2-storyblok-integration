@@ -3,6 +3,9 @@
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="ml_storyblok_csrf_validator" type="MediaLounge\Storyblok\Plugin\CsrfValidatorSkip" />
     </type>
+    <type name="Magento\Framework\App\Response\HeaderProvider\XFrameOptions">
+        <plugin name="allow_storyblok" type="MediaLounge\Storyblok\Plugin\XFrameOptions" />
+    </type>
     <type name="Magento\Framework\View\Element\Context">
         <arguments>
             <argument name="cacheState" xsi:type="object">MediaLounge\Storyblok\App\Cache\State</argument>
