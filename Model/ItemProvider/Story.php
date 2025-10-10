@@ -19,28 +19,24 @@ class Story implements ItemProviderInterface
 
     public function getItems($storeId)
     {
-        $response = $this->getStories();
-        $stories = $response->getBody()['stories'];
+        $stories = [];
+        $page = 1;
 
-        $totalPages = $response->getHeaders()['Total'][0] / self::STORIES_PER_PAGE;
-        $totalPages = ceil($totalPages);
+        do {
+            $response = $this->getStories($page);
+            $stories = array_merge($stories, $response->getBody()['stories']);
+            $totalPages = ceil($response->getHeaders()['Total'][0] / self::STORIES_PER_PAGE);
+        } while (++$page <= $totalPages);
 
-        if ($totalPages > 1) {
-            for ($page = 2; $page <= $totalPages; $page++) {
-                $pageResponse = $this->getStories($page);
-                $paginatedStories = $pageResponse->getBody()['stories'];
-                $stories = array_merge($stories, $paginatedStories);
-            }
-        }
-
-        $items = array_map(function ($item) use ($storeId) {
-            return $this->itemFactory->create([
+        $items = array_map(
+            fn($item) => $this->itemFactory->create([
                 'url' => $item['full_slug'],
                 'updatedAt' => $item['published_at'],
                 'priority' => $this->configReader->getPriority($storeId),
                 'changeFrequency' => $this->configReader->getChangeFrequency($storeId)
-            ]);
-        }, $stories);
+            ]),
+            $stories
+        );
 
         return $items;
     }
