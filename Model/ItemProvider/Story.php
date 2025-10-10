@@ -5,43 +5,17 @@ namespace MediaLounge\Storyblok\Model\ItemProvider;
 use Magento\Sitemap\Model\SitemapItemInterfaceFactory;
 use Magento\Sitemap\Model\ItemProvider\ConfigReaderInterface;
 use Magento\Sitemap\Model\ItemProvider\ItemProviderInterface;
-use MediaLounge\Storyblok\Model\{Config, ClientFactory};
+use MediaLounge\Storyblok\Model\ClientFactory;
 
 class Story implements ItemProviderInterface
 {
     const STORIES_PER_PAGE = 100;
 
-    /**
-     * @var SitemapItemInterfaceFactory
-     */
-    private $itemFactory;
-
-    /**
-     * @var ConfigReaderInterface
-     */
-    private $configReader;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var \Storyblok\Client
-     */
-    private $storyblokClient;
-
     public function __construct(
-        ConfigReaderInterface $configReader,
-        SitemapItemInterfaceFactory $itemFactory,
-        ClientFactory $clientFactory,
-        Config $config
-    ) {
-        $this->itemFactory = $itemFactory;
-        $this->configReader = $configReader;
-        $this->storyblokClient = $clientFactory->create();
-        $this->config = $config;
-    }
+        private ConfigReaderInterface $configReader,
+        private SitemapItemInterfaceFactory $itemFactory,
+        private ClientFactory $clientFactory
+    ) {}
 
     public function getItems($storeId)
     {
@@ -73,13 +47,23 @@ class Story implements ItemProviderInterface
 
     private function getStories(int $page = 1): \Storyblok\Client
     {
-        $this->storyblokClient->language($this->config->language());
-        $response = $this->storyblokClient->getStories([
+        $response = $this->getClient()->getStories([
             'page' => $page,
             'per_page' => self::STORIES_PER_PAGE,
             'filter_query[component][like]' => 'page'
         ]);
 
         return $response;
+    }
+
+    private function getClient(): \Storyblok\Client
+    {
+        static $storyblokClient;
+
+        if (!$storyblokClient) {
+            $storyblokClient = $this->clientFactory->create();
+        }
+
+        return $storyblokClient;
     }
 }
