@@ -52,14 +52,11 @@ class Story implements ItemProviderInterface
         $totalPages = ceil($totalPages);
 
         if ($totalPages > 1) {
-            $paginatedStories = [];
-
             for ($page = 2; $page <= $totalPages; $page++) {
                 $pageResponse = $this->getStories($page);
                 $paginatedStories = $pageResponse->getBody()['stories'];
+                $stories = array_merge($stories, $paginatedStories);
             }
-
-            $stories = array_merge($stories, $paginatedStories);
         }
 
         $items = array_map(function ($item) use ($storeId) {
