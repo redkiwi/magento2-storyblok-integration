@@ -5,81 +5,61 @@ namespace MediaLounge\Storyblok\Model\ItemProvider;
 use Magento\Sitemap\Model\SitemapItemInterfaceFactory;
 use Magento\Sitemap\Model\ItemProvider\ConfigReaderInterface;
 use Magento\Sitemap\Model\ItemProvider\ItemProviderInterface;
-use MediaLounge\Storyblok\Model\{Config, ClientFactory};
+use MediaLounge\Storyblok\Model\ClientFactory;
 
 class Story implements ItemProviderInterface
 {
     const STORIES_PER_PAGE = 100;
 
-    /**
-     * @var SitemapItemInterfaceFactory
-     */
-    private $itemFactory;
-
-    /**
-     * @var ConfigReaderInterface
-     */
-    private $configReader;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var \Storyblok\Client
-     */
-    private $storyblokClient;
-
     public function __construct(
-        ConfigReaderInterface $configReader,
-        SitemapItemInterfaceFactory $itemFactory,
-        ClientFactory $clientFactory,
-        Config $config
-    ) {
-        $this->itemFactory = $itemFactory;
-        $this->configReader = $configReader;
-        $this->storyblokClient = $clientFactory->create();
-        $this->config = $config;
-    }
+        private ConfigReaderInterface $configReader,
+        private SitemapItemInterfaceFactory $itemFactory,
+        private ClientFactory $clientFactory
+    ) {}
 
     public function getItems($storeId)
     {
-        $response = $this->getStories();
-        $stories = $response->getBody()['stories'];
+        $stories = [];
+        $page = 1;
 
-        $totalPages = $response->getHeaders()['Total'][0] / self::STORIES_PER_PAGE;
-        $totalPages = ceil($totalPages);
+        do {
+            $response = $this->getStories($page);
+            $stories = array_merge($stories, $response->getBody()['stories']);
+            $totalPages = ceil($response->getHeaders()['Total'][0] / self::STORIES_PER_PAGE);
+        } while (++$page <= $totalPages);
 
-        if ($totalPages > 1) {
-            for ($page = 2; $page <= $totalPages; $page++) {
-                $pageResponse = $this->getStories($page);
-                $paginatedStories = $pageResponse->getBody()['stories'];
-                $stories = array_merge($stories, $paginatedStories);
-            }
-        }
-
-        $items = array_map(function ($item) use ($storeId) {
-            return $this->itemFactory->create([
+        $items = array_map(
+            fn($item) => $this->itemFactory->create([
                 'url' => $item['full_slug'],
                 'updatedAt' => $item['published_at'],
                 'priority' => $this->configReader->getPriority($storeId),
                 'changeFrequency' => $this->configReader->getChangeFrequency($storeId)
-            ]);
-        }, $stories);
+            ]),
+            $stories
+        );
 
         return $items;
     }
 
     private function getStories(int $page = 1): \Storyblok\Client
     {
-        $this->storyblokClient->language($this->config->language());
-        $response = $this->storyblokClient->getStories([
+        $response = $this->getClient()->getStories([
             'page' => $page,
             'per_page' => self::STORIES_PER_PAGE,
             'filter_query[component][like]' => 'page'
         ]);
 
         return $response;
+    }
+
+    private function getClient(): \Storyblok\Client
+    {
+        static $storyblokClient;
+
+        if (!$storyblokClient) {
+            $storyblokClient = $this->clientFactory->create();
+        }
+
+        return $storyblokClient;
     }
 }
