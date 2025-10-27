@@ -17,6 +17,7 @@ class Config
     const LANGUAGE_CONFIG_PATH = 'storyblok/general/language';
     const FALLBACK_LANGUAGE_CONFIG_PATH = 'storyblok/general/fallback_language';
     const EXCLUDED_CONTENT_TYPES_CONFIG_PATH = 'storyblok/general/excluded_content_types';
+    const SHOW_BREADCRUMBS_CONFIG_PATH = 'storyblok/seo/show_breadcrumbs';
 
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig,
@@ -110,5 +111,13 @@ class Config
         // Split by newlines and trim each line
         $types = explode("\n", (string)$configured);
         return array_filter(array_map('trim', $types));
+    }
+
+    public function showBreadcrumbs(): bool
+    {
+        return (bool)$this->scopeConfig->getValue(
+            self::SHOW_BREADCRUMBS_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
     }
 }

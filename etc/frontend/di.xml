@@ -1,10 +1,36 @@
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+<config
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd"
+>
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="ml_storyblok_csrf_validator" type="MediaLounge\Storyblok\Plugin\CsrfValidatorSkip" />
     </type>
     <type name="Magento\Framework\App\Response\HeaderProvider\XFrameOptions">
         <plugin name="allow_storyblok" type="MediaLounge\Storyblok\Plugin\XFrameOptions" />
+    </type>
+    <type name="Magento\Store\Model\BaseUrlChecker">
+        <plugin name="prevent_redirect_for_base_url" type="MediaLounge\Storyblok\Plugin\PreventRedirectForBaseUrl" />
+    </type>
+    <type name="Magento\Framework\View\Asset\AssetInterface">
+        <plugin name="fix_asset_url_for_preview" type="MediaLounge\Storyblok\Plugin\FixAssetUrlForPreview" />
+    </type>
+    <type name="MediaLounge\Storyblok\Controller\Index\Index">
+        <plugin name="modify_storyblok_robots" type="MediaLounge\Storyblok\Plugin\StoryblokRobotsTag" />
+    </type>
+    <type name="MediaLounge\Storyblok\Controller\Index\Index">
+        <plugin name="add_alternates_hreflang" type="MediaLounge\Storyblok\Plugin\AddHreflang" />
+    </type>
+    <type name="Magento\Theme\Block\Html\Breadcrumbs">
+        <plugin name="medialounge_storyblok_breadcrumbs" type="MediaLounge\Storyblok\Plugin\StoryblokBreadcrumbs" />
+    </type>
+    <type name="MediaLounge\Storyblok\Plugin\StoryblokBreadcrumbs">
+        <arguments>
+            <argument name="excludedSegments" xsi:type="array">
+                <item name="customer" xsi:type="string">customer</item>
+                <item name="newsletter" xsi:type="string">newsletter</item>
+            </argument>
+        </arguments>
     </type>
     <type name="Magento\Framework\View\Element\Context">
         <arguments>

@@ -6,13 +6,14 @@ namespace MediaLounge\Storyblok\ViewModel;
 
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use MediaLounge\Storyblok\Model\LinkRepository;
+use MediaLounge\Storyblok\Model\{Config, LinkRepository};
 
 class LinkResolver implements ArgumentInterface
 {
     public function __construct(
         private readonly LinkRepository $linkRepository,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly Config $config
     ) {}
 
     public function getResolvedLink(array $link): string
@@ -42,6 +43,17 @@ class LinkResolver implements ArgumentInterface
     {
         $baseUrl = $this->storeManager->getStore()->getBaseUrl();
         $slug = ltrim($slug, '/');
+
+        // Remove language code when there is no slug prefix set
+        $language = $this->config->language();
+        if (
+            !$this->config->slugPrefix()
+            && $language
+            && str_starts_with($slug, $language)
+        ) {
+            $slug = substr($slug, strlen($language) + 1);
+        }
+
         return rtrim($baseUrl, '/') . '/' . $slug;
     }
 }
