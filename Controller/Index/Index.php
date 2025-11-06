@@ -1,4 +1,5 @@
 <?php
+
 namespace MediaLounge\Storyblok\Controller\Index;
 
 use Magento\Framework\View\Result\Page;
@@ -8,6 +9,7 @@ use Magento\Framework\View\Result\PageFactory;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\App\Action\HttpGetActionInterface;
+use MediaLounge\Storyblok\Model\Config;
 
 class Index extends Action implements HttpGetActionInterface
 {
@@ -16,11 +18,14 @@ class Index extends Action implements HttpGetActionInterface
      */
     private $pageFactory;
 
-    public function __construct(Context $context, PageFactory $pageFactory)
+    private Config $config;
+
+    public function __construct(Context $context, PageFactory $pageFactory, Config $config)
     {
         parent::__construct($context);
 
         $this->pageFactory = $pageFactory;
+        $this->config = $config;
     }
 
     public function execute(): ResultInterface
@@ -43,7 +48,7 @@ class Index extends Action implements HttpGetActionInterface
         return $resultPage;
     }
 
-    private function setMetaFields(Page $resultPage, array $story)
+    private function setMetaFields(Page $resultPage, array $story): Page
     {
         $metaTitle = '';
         $metaDescription = '';
@@ -71,11 +76,45 @@ class Index extends Action implements HttpGetActionInterface
             $resultPage->getConfig()->setDescription($metaDescription);
         }
 
+        $resultPage = $this->addCanonicalLink($resultPage, $story);
+
         return $resultPage;
     }
 
     private function isMetaFieldsBlock(array $data)
     {
         return !empty($data['plugin']) && $data['plugin'] === 'meta-fields';
+    }
+
+    private function addCanonicalLink(Page $resultPage, array $story): Page
+    {
+        if (!$this->config->addCanonical($resultPage, $story)) {
+            return $resultPage;
+        }
+
+        $baseUrl = trim($this->getRequest()->getDistroBaseUrl(), '/');
+        $slug = trim($this->getRequest()->getPathInfo(), '/');
+
+        $canonicalUrl = $baseUrl . '/' . $slug;
+        if (!empty($story['content']['metadata_canonical'])) {
+            $storyMetaCanonicalUrl = $story['content']['metadata_canonical'];
+            if (!str_contains($storyMetaCanonicalUrl, 'http')) {
+                $canonicalUrl = $baseUrl . '/' . trim($storyMetaCanonicalUrl, '/');
+            } else {
+                $canonicalUrl = trim($storyMetaCanonicalUrl, '/');
+            }
+        }
+
+        $resultPage->getConfig()->addRemotePageAsset(
+            $canonicalUrl,
+            'canonical',
+            [
+                'attributes' => [
+                    'rel' => 'canonical'
+                ]
+            ]
+        );
+
+        return $resultPage;
     }
 }

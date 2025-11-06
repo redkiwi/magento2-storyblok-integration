@@ -18,6 +18,7 @@ class Config
     const FALLBACK_LANGUAGE_CONFIG_PATH = 'storyblok/general/fallback_language';
     const EXCLUDED_CONTENT_TYPES_CONFIG_PATH = 'storyblok/general/excluded_content_types';
     const SHOW_BREADCRUMBS_CONFIG_PATH = 'storyblok/seo/show_breadcrumbs';
+    const ADD_CANONICAL_CONFIG_PATH = 'storyblok/seo/add_canonical';
 
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig,
@@ -117,6 +118,14 @@ class Config
     {
         return (bool)$this->scopeConfig->getValue(
             self::SHOW_BREADCRUMBS_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
+    }
+
+    public function addCanonical(): bool
+    {
+        return (bool)$this->scopeConfig->getValue(
+            self::ADD_CANONICAL_CONFIG_PATH,
             ScopeInterface::SCOPE_STORE
         );
     }
