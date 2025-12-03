@@ -11,6 +11,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\View\Result\Layout;
 use MediaLounge\Storyblok\Controller\Index\Index as StoryblokIndex;
+use MediaLounge\Storyblok\Model\Config as StoryblokConfig;
 use Storyblok\{Client, ClientFactory};
 
 class AddHreflang
@@ -18,7 +19,8 @@ class AddHreflang
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly ClientFactory $storyblokClientFactory,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly StoryblokConfig $storyblokConfig
     ) {}
 
     /**
@@ -87,7 +89,11 @@ class AddHreflang
         }
         $slug = trim($story['full_slug'], '/');
 
-        $lang = explode('/', $slug)[0] ?? 'x-default';
+        if ($this->storyblokConfig->slugPrefix()) {
+            $lang = explode('/', $slug)[0] ?? 'x-default';
+        } else {
+            $lang = 'x-default';
+        }
         $lang = ($lang === 'be') ? 'nl-be' : $lang;
 
         $pageConfig->addRemotePageAsset(
