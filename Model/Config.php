@@ -30,7 +30,7 @@ class Config
         return $this->scopeConfig->getValue(
             self::API_KEY_CONFIG_PATH,
             ScopeInterface::SCOPE_STORE
-        );
+        ) ?? '';
     }
 
     public function slugPrefix(): string
