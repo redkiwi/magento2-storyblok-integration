@@ -59,10 +59,6 @@ class StoryRepository
 
             return $responseData['story'] ?? [];
         } catch (ApiException $e) {
-            $this->logger->error("Storyblok API error for slug: {$identifier}", [
-                'exception' => $e->getMessage(),
-                'code' => $e->getCode()
-            ]);
             return [];
         }
     }
