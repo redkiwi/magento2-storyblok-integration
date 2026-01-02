@@ -1,0 +1,3 @@
+include:
+  - component: $CI_SERVER_FQDN/pipelines/deploy-components/release@1.0.0
+  - component: $CI_SERVER_FQDN/pipelines/php-components/publish-composer-package@1.0.0
