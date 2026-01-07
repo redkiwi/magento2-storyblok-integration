@@ -8,6 +8,7 @@ use MediaLounge\Storyblok\Block\Container\Element;
 use Magento\Framework\DataObject\IdentityInterface;
 use Magento\Framework\View\Element\Template\Context;
 use MediaLounge\Storyblok\Model\StoryRepository;
+use MediaLounge\Storyblok\Model\SpaceHashProvider;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\App\State;
 
@@ -18,6 +19,7 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
         private readonly StoryRepository $storyRepository,
         private readonly LoggerInterface $logger,
         private readonly State $appState,
+        private readonly SpaceHashProvider $spaceHashProvider,
         Context $context,
         array $data = []
     ) {
@@ -31,10 +33,12 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
 
     public function getIdentities(): array
     {
+        $spaceHash = $this->spaceHashProvider->getHash();
+
         if (!empty($this->getSlug())) {
-            return ["storyblok_slug_{$this->getSlug()}"];
+            return ["storyblok_slug_{$this->getSlug()}_{$spaceHash}"];
         } elseif (!empty($this->getData('story')['id'])) {
-            return ["storyblok_{$this->getData('story')['id']}"];
+            return ["storyblok_{$this->getData('story')['id']}_{$spaceHash}"];
         }
 
         return [];
@@ -43,11 +47,12 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
     public function getCacheKeyInfo(): array
     {
         $info = parent::getCacheKeyInfo();
+        $spaceHash = $this->spaceHashProvider->getHash();
 
         if (!empty($this->getData('story')['id'])) {
-            $info[] = "storyblok_{$this->getData('story')['id']}";
+            $info[] = "storyblok_{$this->getData('story')['id']}_{$spaceHash}";
         } elseif (!empty($this->getSlug())) {
-            $info[] = "storyblok_slug_{$this->getSlug()}";
+            $info[] = "storyblok_slug_{$this->getSlug()}_{$spaceHash}";
         }
 
         return $info;

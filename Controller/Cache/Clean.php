@@ -15,6 +15,7 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\PageCache\Model\Cache\Type as CacheType;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use MediaLounge\Storyblok\Model\SpaceHashProvider;
 
 class Clean extends Action implements HttpPostActionInterface
 {
@@ -53,6 +54,11 @@ class Clean extends Action implements HttpPostActionInterface
      */
     private $cacheTypeList;
 
+    /**
+     * @var SpaceHashProvider
+     */
+    private $spaceHashProvider;
+
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
@@ -61,7 +67,8 @@ class Clean extends Action implements HttpPostActionInterface
         Json $json,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
-        TypeListInterface $cacheTypeList
+        TypeListInterface $cacheTypeList,
+        SpaceHashProvider $spaceHashProvider
     ) {
         parent::__construct($context);
 
@@ -72,6 +79,7 @@ class Clean extends Action implements HttpPostActionInterface
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
         $this->cacheTypeList = $cacheTypeList;
+        $this->spaceHashProvider = $spaceHashProvider;
     }
 
     public function execute(): ResultInterface
@@ -82,8 +90,12 @@ class Clean extends Action implements HttpPostActionInterface
         if ($this->isSignatureValid($this->getRequest())) {
             if (isset($postContent['story_id'])) {
                 preg_match('#\((.*?)\)#', $postContent['text'], $slug);
+                $spaceHash = $this->spaceHashProvider->getHash();
 
-                $tags = ["storyblok_slug_{$slug[1]}", "storyblok_{$postContent['story_id']}"];
+                $tags = [
+                    "storyblok_slug_{$slug[1]}_{$spaceHash}",
+                    "storyblok_{$postContent['story_id']}_{$spaceHash}"
+                ];
                 $this->cacheInterface->clean($tags);
                 $this->cacheType->clean(\Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG, $tags);
 

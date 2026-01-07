@@ -20,7 +20,8 @@ class StoryRepository
         private readonly PrefixSlug $prefixSlug,
         private readonly LinkRepository $linkRepository,
         private readonly Config $config,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly SpaceHashProvider $spaceHashProvider
     ) {
         $this->storyblokClient = $this->clientFactory->create();
     }
@@ -32,9 +33,10 @@ class StoryRepository
         try {
             $data = null;
             $language = $this->config->language();
+            $spaceHash = $this->spaceHashProvider->getHash();
 
             if (!$bypassCache) {
-                $data = $this->cache->load("{$identifier}_{$language}");
+                $data = $this->cache->load("{$identifier}_{$language}_{$spaceHash}");
             }
 
             if (!$data || $bypassCache) {
@@ -44,8 +46,8 @@ class StoryRepository
                 $data = $this->serializer->serialize($responseBody);
 
                 if (!$bypassCache && !empty($responseBody['story'])) {
-                    $this->cache->save($data, "{$identifier}_{$language}", [
-                        "storyblok_{$responseBody['story']['id']}"
+                    $this->cache->save($data, "{$identifier}_{$language}_{$spaceHash}", [
+                        "storyblok_{$responseBody['story']['id']}_{$spaceHash}"
                     ]);
                 }
             }

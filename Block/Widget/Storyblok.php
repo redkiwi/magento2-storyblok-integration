@@ -10,6 +10,7 @@ use Magento\Framework\View\FileSystem;
 use Magento\Widget\Block\BlockInterface;
 use MediaLounge\Storyblok\Block\Container;
 use MediaLounge\Storyblok\Model\Config;
+use MediaLounge\Storyblok\Model\SpaceHashProvider;
 use MediaLounge\Storyblok\Model\StoryRepository;
 use Psr\Log\LoggerInterface;
 
@@ -21,11 +22,12 @@ class Storyblok extends Container implements BlockInterface
         StoryRepository $storyRepository,
         LoggerInterface $logger,
         State $appState,
+        SpaceHashProvider $spaceHashProvider,
         Context $context,
         private readonly Config $config,
         array $data = []
     ) {
-        parent::__construct($viewFileSystem, $storyRepository, $logger, $appState, $context, $data);
+        parent::__construct($viewFileSystem, $storyRepository, $logger, $appState, $spaceHashProvider, $context, $data);
     }
 
     public function getSlug(): string
