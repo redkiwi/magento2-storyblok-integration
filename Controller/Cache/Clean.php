@@ -83,7 +83,10 @@ class Clean extends Action implements HttpPostActionInterface
             if (isset($postContent['story_id'])) {
                 preg_match('#\((.*?)\)#', $postContent['text'], $slug);
 
-                $tags = ["storyblok_slug_{$slug[1]}", "storyblok_{$postContent['story_id']}"];
+                $tags = [
+                    "storyblok_slug_{$slug[1]}",
+                    "storyblok_{$postContent['story_id']}"
+                ];
                 $this->cacheInterface->clean($tags);
                 $this->cacheType->clean(\Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG, $tags);
 

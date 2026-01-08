@@ -8,6 +8,7 @@ use MediaLounge\Storyblok\Block\Container\Element;
 use Magento\Framework\DataObject\IdentityInterface;
 use Magento\Framework\View\Element\Template\Context;
 use MediaLounge\Storyblok\Model\StoryRepository;
+use MediaLounge\Storyblok\Model\SpaceHashProvider;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\App\State;
 
@@ -18,6 +19,7 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
         private readonly StoryRepository $storyRepository,
         private readonly LoggerInterface $logger,
         private readonly State $appState,
+        private readonly SpaceHashProvider $spaceHashProvider,
         Context $context,
         array $data = []
     ) {
@@ -43,6 +45,7 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
     public function getCacheKeyInfo(): array
     {
         $info = parent::getCacheKeyInfo();
+        $info[] = $this->spaceHashProvider->getHash();
 
         if (!empty($this->getData('story')['id'])) {
             $info[] = "storyblok_{$this->getData('story')['id']}";

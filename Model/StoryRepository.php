@@ -20,31 +20,34 @@ class StoryRepository
         private readonly PrefixSlug $prefixSlug,
         private readonly LinkRepository $linkRepository,
         private readonly Config $config,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly SpaceHashProvider $spaceHashProvider
     ) {
         $this->storyblokClient = $this->clientFactory->create();
     }
 
     public function getStoryBySlug(string $slug, bool $bypassCache = false): array
     {
-        $identifier = ($this->prefixSlug)($slug);
+        $spaceHash = $this->spaceHashProvider->getHash();
+        $slug = ($this->prefixSlug)($slug);
+        $language = $this->config->language();
+        $identifier = "{$spaceHash}_{$slug}_{$language}";
 
         try {
             $data = null;
-            $language = $this->config->language();
 
             if (!$bypassCache) {
-                $data = $this->cache->load("{$identifier}_{$language}");
+                $data = $this->cache->load($identifier);
             }
 
             if (!$data || $bypassCache) {
                 $this->storyblokClient->language($language);
-                $response = $this->storyblokClient->getStoryBySlug($identifier);
+                $response = $this->storyblokClient->getStoryBySlug($slug);
                 $responseBody = $response->getBody();
                 $data = $this->serializer->serialize($responseBody);
 
                 if (!$bypassCache && !empty($responseBody['story'])) {
-                    $this->cache->save($data, "{$identifier}_{$language}", [
+                    $this->cache->save($data, $identifier, [
                         "storyblok_{$responseBody['story']['id']}"
                     ]);
                 }
@@ -59,7 +62,7 @@ class StoryRepository
 
             return $responseData['story'] ?? [];
         } catch (ApiException $e) {
-            $this->logger->info("Storyblok API error for slug: {$identifier}", [
+            $this->logger->info("Storyblok API error for slug: {$slug}", [
                 'exception' => $e->getMessage(),
                 'code' => $e->getCode()
             ]);
