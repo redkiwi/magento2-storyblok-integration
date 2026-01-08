@@ -33,12 +33,10 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
 
     public function getIdentities(): array
     {
-        $spaceHash = $this->spaceHashProvider->getHash();
-
         if (!empty($this->getSlug())) {
-            return ["storyblok_slug_{$this->getSlug()}_{$spaceHash}"];
+            return ["storyblok_slug_{$this->getSlug()}"];
         } elseif (!empty($this->getData('story')['id'])) {
-            return ["storyblok_{$this->getData('story')['id']}_{$spaceHash}"];
+            return ["storyblok_{$this->getData('story')['id']}"];
         }
 
         return [];
@@ -47,12 +45,12 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
     public function getCacheKeyInfo(): array
     {
         $info = parent::getCacheKeyInfo();
-        $spaceHash = $this->spaceHashProvider->getHash();
+        $info[] = $this->spaceHashProvider->getHash();
 
         if (!empty($this->getData('story')['id'])) {
-            $info[] = "storyblok_{$this->getData('story')['id']}_{$spaceHash}";
+            $info[] = "storyblok_{$this->getData('story')['id']}";
         } elseif (!empty($this->getSlug())) {
-            $info[] = "storyblok_slug_{$this->getSlug()}_{$spaceHash}";
+            $info[] = "storyblok_slug_{$this->getSlug()}";
         }
 
         return $info;

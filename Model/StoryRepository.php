@@ -42,13 +42,13 @@ class StoryRepository
 
             if (!$data || $bypassCache) {
                 $this->storyblokClient->language($language);
-                $response = $this->storyblokClient->getStoryBySlug($identifier);
+                $response = $this->storyblokClient->getStoryBySlug($slug);
                 $responseBody = $response->getBody();
                 $data = $this->serializer->serialize($responseBody);
 
                 if (!$bypassCache && !empty($responseBody['story'])) {
                     $this->cache->save($data, $identifier, [
-                        "storyblok_{$responseBody['story']['id']}_{$spaceHash}"
+                        "storyblok_{$responseBody['story']['id']}"
                     ]);
                 }
             }
@@ -62,7 +62,7 @@ class StoryRepository
 
             return $responseData['story'] ?? [];
         } catch (ApiException $e) {
-            $this->logger->info("Storyblok API error for slug: {$identifier}", [
+            $this->logger->info("Storyblok API error for slug: {$slug}", [
                 'exception' => $e->getMessage(),
                 'code' => $e->getCode()
             ]);
