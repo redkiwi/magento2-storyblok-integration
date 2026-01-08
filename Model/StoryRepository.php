@@ -28,15 +28,16 @@ class StoryRepository
 
     public function getStoryBySlug(string $slug, bool $bypassCache = false): array
     {
-        $identifier = ($this->prefixSlug)($slug);
+        $spaceHash = $this->spaceHashProvider->getHash();
+        $slug = ($this->prefixSlug)($slug);
+        $language = $this->config->language();
+        $identifier = "{$spaceHash}_{$slug}_{$language}";
 
         try {
             $data = null;
-            $language = $this->config->language();
-            $spaceHash = $this->spaceHashProvider->getHash();
 
             if (!$bypassCache) {
-                $data = $this->cache->load("{$identifier}_{$language}_{$spaceHash}");
+                $data = $this->cache->load($identifier);
             }
 
             if (!$data || $bypassCache) {
@@ -46,7 +47,7 @@ class StoryRepository
                 $data = $this->serializer->serialize($responseBody);
 
                 if (!$bypassCache && !empty($responseBody['story'])) {
-                    $this->cache->save($data, "{$identifier}_{$language}_{$spaceHash}", [
+                    $this->cache->save($data, $identifier, [
                         "storyblok_{$responseBody['story']['id']}_{$spaceHash}"
                     ]);
                 }
