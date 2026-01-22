@@ -60,7 +60,7 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
     {
         if (!$this->getData('story')) {
             $slug = $this->getSlug();
-            $story = $this->storyRepository->getStoryBySlug($slug);
+            $story = $this->storyRepository->getStoryBySlug($slug, $this->shouldBypassCache());
             $this->setData('story', $story);
         }
 
@@ -142,5 +142,10 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
         }
 
         return '';
+    }
+
+    protected function shouldBypassCache(): bool
+    {
+        return $this->getRequest()->getParam('_storyblok') ?? false;
     }
 }
