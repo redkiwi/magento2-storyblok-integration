@@ -13,8 +13,8 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\PageCache\Model\Cache\Type as CacheType;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use MediaLounge\Storyblok\Model\Config;
 
 class Clean extends Action implements HttpPostActionInterface
 {
@@ -39,11 +39,6 @@ class Clean extends Action implements HttpPostActionInterface
     private $json;
 
     /**
-     * @var ScopeConfigInterface
-     */
-    private $scopeConfig;
-
-    /**
      * @var StoreManagerInterface
      */
     private $storeManager;
@@ -53,15 +48,20 @@ class Clean extends Action implements HttpPostActionInterface
      */
     private $cacheTypeList;
 
+    /**
+     * @var Config
+     */
+    private $config;
+
     public function __construct(
         Context $context,
         JsonFactory $resultJsonFactory,
         CacheInterface $cacheInterface,
         CacheType $cacheType,
         Json $json,
-        ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
-        TypeListInterface $cacheTypeList
+        TypeListInterface $cacheTypeList,
+        Config $config
     ) {
         parent::__construct($context);
 
@@ -69,9 +69,9 @@ class Clean extends Action implements HttpPostActionInterface
         $this->cacheInterface = $cacheInterface;
         $this->cacheType = $cacheType;
         $this->json = $json;
-        $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
         $this->cacheTypeList = $cacheTypeList;
+        $this->config = $config;
     }
 
     public function execute(): ResultInterface
@@ -79,7 +79,7 @@ class Clean extends Action implements HttpPostActionInterface
         $success = false;
         $postContent = $this->json->unserialize($this->getRequest()->getContent());
 
-        if ($this->isSignatureValid($this->getRequest())) {
+        if (!$this->config->isWebhookSignatureValidationEnabled() || $this->isSignatureValid($this->getRequest())) {
             if (isset($postContent['story_id'])) {
                 preg_match('#\((.*?)\)#', $postContent['text'], $slug);
 
@@ -123,12 +123,7 @@ class Clean extends Action implements HttpPostActionInterface
      */
     private function isSignatureValid(RequestInterface $request): bool
     {
-        $webhookSecret = $this->scopeConfig->getValue(
-            'storyblok/general/webhook_secret',
-            ScopeInterface::SCOPE_STORE,
-            $this->storeManager->getStore()->getId()
-        );
-        $signature = hash_hmac('sha1', $request->getContent(), $webhookSecret);
+        $signature = hash_hmac('sha1', $request->getContent(), $this->config->webhookSecret());
         $webhookSignature = $request
             ->getHeaders()
             ->get('Webhook-Signature')

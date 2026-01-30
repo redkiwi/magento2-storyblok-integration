@@ -22,6 +22,14 @@
                         <field id="storyblok/general/enabled">1</field>
                     </depends>
                 </field>
+                <field id="webhook_signature_validation" translate="label comment" type="select" sortOrder="29" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Webhook Signature Validation</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Enable webhook signature validation for security. Disable for testing or Starter Subscription.</comment>
+                    <depends>
+                        <field id="storyblok/general/enabled">1</field>
+                    </depends>
+                </field>
                 <field id="webhook_secret" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Webhook Secret</label>
                     <validate>required-entry validate-length minimum-length-20</validate>
