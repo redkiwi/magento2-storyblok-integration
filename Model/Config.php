@@ -21,6 +21,8 @@ class Config
     const ADD_CANONICAL_CONFIG_PATH = 'storyblok/seo/add_canonical';
     const WEBHOOK_SECRET_CONFIG_PATH = 'storyblok/general/webhook_secret';
     const WEBHOOK_SIGNATURE_VALIDATION_CONFIG_PATH = 'storyblok/general/webhook_signature_validation';
+    const ASSET_PROXY_ENABLED_CONFIG_PATH = 'storyblok/general/asset_proxy_enabled';
+    const ASSET_HOSTS_CONFIG_PATH = 'storyblok/general/asset_hosts';
 
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig,
@@ -148,5 +150,28 @@ class Config
             ScopeInterface::SCOPE_STORE,
             $this->storeManager->getStore()->getId()
         );
+    }
+
+    public function isAssetProxyEnabled(): bool
+    {
+        return (bool)$this->scopeConfig->getValue(
+            self::ASSET_PROXY_ENABLED_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
+    }
+
+    public function assetHosts(): array
+    {
+        $configured = (string)$this->scopeConfig->getValue(
+            self::ASSET_HOSTS_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
+        );
+
+        return array_filter(array_map('trim', explode(',', $configured)));
+    }
+
+    public function primaryAssetHost(): string
+    {
+        return $this->assetHosts()[0];
     }
 }

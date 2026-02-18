@@ -31,6 +31,29 @@ It can be used as an **alternative to Magento Commerce's Page Builder** as it pr
 * [SEO](https://github.com/Media-Lounge/magento2-storyblok-integration/wiki/SEO)
 * [Custom Fields](https://github.com/Media-Lounge/magento2-storyblok-integration/wiki/Custom-Fields)
 
+## Asset Proxy
+
+Optional feature that routes Storyblok asset URLs (images, PDFs, videos, etc.) through Magento, enabling Varnish/page cache to serve assets from the same domain.
+
+### Configuration
+
+1. Navigate to **Stores > Configuration > Media Lounge > Storyblok > General > Asset Proxy** and set to **Yes**
+2. Configure **Asset Hosts** with your Storyblok CDN hostname(s) as a comma-separated list
+
+Storyblok uses regional CDN domains. See [Storyblok Asset Documentation](https://www.storyblok.com/docs/concepts/assets) for your region's hosts. The first host is used for fetching, all are matched for URL rewriting. Examples: `a.storyblok.com` (EU), `a-us.storyblok.com` (US), `a-ap.storyblok.com` (AU).
+
+### How It Works
+
+When enabled, Storyblok asset URLs from configured hosts are rewritten to `{base_url}/storyblok/asset/proxy/path/{encoded_path}`. The proxy fetches the asset from the primary host and returns it with `Cache-Control: public, max-age=31536000` headers, allowing Varnish to cache the response.
+
+Two integration points:
+- **Output plugin** — Automatically rewrites all Storyblok asset URLs in Element block HTML output (images, WYSIWYG, everything)
+- **`ViewModel\AssetProxy`** — For use in custom `.phtml` templates outside Storyblok blocks via `getProxiedUrl($url)`
+
+### Cache Behavior
+
+Proxied assets are served with a 1-year cache header. Since Storyblok asset URLs contain content hashes, they are effectively immutable — a new asset produces a new URL.
+
 ## Videos
 
 If you want to see it in action you can watch our [YouTube playlist](https://www.youtube.com/watch?v=I8_TCyOCKAo&list=PLn3mpLgxMjLSRWmmmf0RRX8wEVgv4dZ0k).

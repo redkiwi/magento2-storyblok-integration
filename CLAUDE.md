@@ -39,6 +39,10 @@ Request → Router → StoryRepository (cached) → Container Block → Render B
 - **LinkResolver** (`ViewModel/LinkResolver.php`) - Converts Storyblok links to Magento URLs
 - **Config** (`Model/Config.php`) - All configuration access
 - **Plugins** (`Plugin/`) - SEO features (hreflangs, canonical, breadcrumbs, robots)
+- **AssetProxyUrl** (`Model/AssetProxyUrl.php`) - Rewrites Storyblok asset URLs to proxy URLs (hex encoding via bin2hex/hex2bin)
+- **AssetProxy** (`Model/AssetProxy.php`) - Fetches remote assets from Storyblok CDN
+- **AssetProxyOutput** (`Plugin/AssetProxyOutput.php`) - afterToHtml plugin that rewrites URLs in rendered block HTML
+- **DisableSessionForProxy** (`Plugin/DisableSessionForProxy.php`) - Prevents PHP session start for proxy routes
 
 ### Adding Block Types
 
@@ -74,3 +78,5 @@ Key config values accessed via `Model/Config`:
 - `storyblok/general/language` - Language code
 - `storyblok/general/slug_prefix` - URL prefix
 - `storyblok/home_page/home_slug` - Homepage slug
+- `storyblok/general/asset_proxy_enabled` - Enable/disable asset proxy
+- `storyblok/general/asset_hosts` - Comma-separated Storyblok CDN hostnames

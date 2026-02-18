@@ -42,6 +42,9 @@
             <argument name="cacheState" xsi:type="object">MediaLounge\Storyblok\App\Cache\State</argument>
         </arguments>
     </type>
+    <type name="Magento\Framework\Session\SessionStartChecker">
+        <plugin name="storyblok_disable_session_for_proxy" type="MediaLounge\Storyblok\Plugin\DisableSessionForProxy" />
+    </type>
     <type name="Magento\Framework\App\RouterList">
         <arguments>
             <argument name="routerList" xsi:type="array">
