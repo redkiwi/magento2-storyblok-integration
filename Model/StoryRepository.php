@@ -26,11 +26,11 @@ class StoryRepository
         $this->storyblokClient = $this->clientFactory->create();
     }
 
-    public function getStoryBySlug(string $slug, bool $bypassCache = false): array
+    public function getStoryBySlug(string $slug, bool $bypassCache = false, ?string $storeCode = null): array
     {
         $spaceHash = $this->spaceHashProvider->getHash();
-        $slug = ($this->prefixSlug)($slug);
-        $language = $this->config->language();
+        $slug = ($this->prefixSlug)($slug, $storeCode);
+        $language = $this->config->language($storeCode);
         $identifier = "{$spaceHash}_{$slug}_{$language}";
 
         try {

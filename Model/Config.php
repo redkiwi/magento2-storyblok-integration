@@ -37,11 +37,12 @@ class Config
         );
     }
 
-    public function slugPrefix(): string
+    public function slugPrefix(?string $storeCode = null): string
     {
         return (string)$this->scopeConfig->getValue(
             self::SLUG_PREFIX_CONFIG_PATH,
-            ScopeInterface::SCOPE_STORE
+            ScopeInterface::SCOPE_STORE,
+            $storeCode
         );
     }
 
@@ -70,11 +71,12 @@ class Config
         );
     }
 
-    public function language(): string
+    public function language(?string $storeCode = null): string
     {
         $configured = $this->scopeConfig->getValue(
             self::LANGUAGE_CONFIG_PATH,
-            ScopeInterface::SCOPE_STORE
+            ScopeInterface::SCOPE_STORE,
+            $storeCode
         );
 
         if ($configured) {

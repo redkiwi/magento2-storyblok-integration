@@ -12,9 +12,9 @@ class PrefixSlug implements ArgumentInterface
         private readonly Config $config,
     ) {}
 
-    public function __invoke(string $slug): string
+    public function __invoke(string $slug, ?string $storeCode = null): string
     {
-        $prefix = $this->config->slugPrefix();
+        $prefix = $this->config->slugPrefix($storeCode);
 
         if ($prefix) {
             $slug = "{$prefix}/{$slug}";
