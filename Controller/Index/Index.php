@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MediaLounge\Storyblok\Controller\Index;
 
 use Magento\Framework\View\Result\Page;
@@ -10,22 +12,17 @@ use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use MediaLounge\Storyblok\Model\Config;
+use MediaLounge\Storyblok\Model\HreflangResolver;
 
 class Index extends Action implements HttpGetActionInterface
 {
-    /**
-     * @var PageFactory
-     */
-    private $pageFactory;
-
-    private Config $config;
-
-    public function __construct(Context $context, PageFactory $pageFactory, Config $config)
-    {
+    public function __construct(
+        Context $context,
+        private readonly PageFactory $pageFactory,
+        private readonly Config $config,
+        private readonly HreflangResolver $hreflangResolver
+    ) {
         parent::__construct($context);
-
-        $this->pageFactory = $pageFactory;
-        $this->config = $config;
     }
 
     public function execute(): ResultInterface
@@ -39,6 +36,7 @@ class Index extends Action implements HttpGetActionInterface
         /** @var Page $resultPage */
         $resultPage = $this->pageFactory->create();
         $resultPage = $this->setMetaFields($resultPage, $story);
+        $resultPage = $this->addHreflangLinks($resultPage, $story);
 
         $resultPage
             ->getLayout()
@@ -81,7 +79,31 @@ class Index extends Action implements HttpGetActionInterface
         return $resultPage;
     }
 
-    private function isMetaFieldsBlock(array $data)
+    private function addHreflangLinks(Page $resultPage, array $story): Page
+    {
+        if (!$this->config->addHreflang()) {
+            return $resultPage;
+        }
+
+        $hreflangs = $this->hreflangResolver->resolve($story);
+
+        foreach ($hreflangs as $hreflang) {
+            $resultPage->getConfig()->addRemotePageAsset(
+                $hreflang['url'],
+                'alternate',
+                [
+                    'attributes' => [
+                        'rel' => 'alternate',
+                        'hreflang' => $hreflang['hreflang'],
+                    ],
+                ]
+            );
+        }
+
+        return $resultPage;
+    }
+
+    private function isMetaFieldsBlock(array $data): bool
     {
         return !empty($data['plugin']) && $data['plugin'] === 'meta-fields';
     }

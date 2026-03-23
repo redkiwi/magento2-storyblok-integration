@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace MediaLounge\Storyblok\Test\Unit\Controller\Index;
 
 use PHPUnit\Framework\TestCase;
@@ -13,44 +16,21 @@ use Magento\Framework\View\Result\PageFactory;
 use MediaLounge\Storyblok\Controller\Index\Index;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\View\Element\BlockInterface;
+use MediaLounge\Storyblok\Model\Config as StoryblokConfig;
+use MediaLounge\Storyblok\Model\HreflangResolver;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
 
 class IndexTest extends TestCase
 {
-    /**
-     * @var ObjectManagerHelper
-     */
-    private $objectManagerHelper;
-
-    /**
-     * @var Context|MockObject
-     */
-    private $contextMock;
-
-    /**
-     * @var BlockInterface|MockObject
-     */
-    private $blockMock;
-
-    /**
-     * @var Title|MockObject
-     */
-    private $titleMock;
-
-    /**
-     * @var Config|MockObject
-     */
-    private $configMock;
-
-    /**
-     * @var RequestInterface|MockObject
-     */
-    private $requestMock;
-
-    /**
-     * @var PageFactory|MockObject
-     */
-    private $pageFactoryMock;
+    private ObjectManagerHelper $objectManagerHelper;
+    private Context&MockObject $contextMock;
+    private BlockInterface&MockObject $blockMock;
+    private Title&MockObject $titleMock;
+    private Config&MockObject $configMock;
+    private RequestInterface&MockObject $requestMock;
+    private PageFactory&MockObject $pageFactoryMock;
+    private StoryblokConfig&MockObject $storyblokConfigMock;
+    private HreflangResolver&MockObject $hreflangResolverMock;
 
     protected function setUp(): void
     {
@@ -99,10 +79,14 @@ class IndexTest extends TestCase
             ->method('create')
             ->willReturn($pageMock);
 
+        $this->storyblokConfigMock = $this->createMock(StoryblokConfig::class);
+        $this->hreflangResolverMock = $this->createMock(HreflangResolver::class);
+        $this->hreflangResolverMock->method('resolve')->willReturn([]);
+
         $this->objectManagerHelper = new ObjectManagerHelper($this);
     }
 
-    public function testExecute()
+    public function testExecute(): void
     {
         $fixtureStoryArray = require __DIR__ . '../../../_files/story_with_blocks.php';
 
@@ -126,13 +110,15 @@ class IndexTest extends TestCase
 
         $controller = $this->objectManagerHelper->getObject(Index::class, [
             'context' => $this->contextMock,
-            'pageFactory' => $this->pageFactoryMock
+            'pageFactory' => $this->pageFactoryMock,
+            'config' => $this->storyblokConfigMock,
+            'hreflangResolver' => $this->hreflangResolverMock,
         ]);
 
         $controller->execute();
     }
 
-    public function testMissingStory()
+    public function testMissingStory(): void
     {
         $this->expectException(NotFoundException::class);
 
@@ -144,13 +130,15 @@ class IndexTest extends TestCase
 
         $controller = $this->objectManagerHelper->getObject(Index::class, [
             'context' => $this->contextMock,
-            'pageFactory' => $this->pageFactoryMock
+            'pageFactory' => $this->pageFactoryMock,
+            'config' => $this->storyblokConfigMock,
+            'hreflangResolver' => $this->hreflangResolverMock,
         ]);
 
         $controller->execute();
     }
 
-    public function testSetMetaFields()
+    public function testSetMetaFields(): void
     {
         $fixtureStoryArray = require __DIR__ . '../../../_files/story_with_meta_fields.php';
 
@@ -173,7 +161,9 @@ class IndexTest extends TestCase
 
         $controller = $this->objectManagerHelper->getObject(Index::class, [
             'context' => $this->contextMock,
-            'pageFactory' => $this->pageFactoryMock
+            'pageFactory' => $this->pageFactoryMock,
+            'config' => $this->storyblokConfigMock,
+            'hreflangResolver' => $this->hreflangResolverMock,
         ]);
 
         $controller->execute();

@@ -18,9 +18,6 @@
     <type name="MediaLounge\Storyblok\Controller\Index\Index">
         <plugin name="modify_storyblok_robots" type="MediaLounge\Storyblok\Plugin\StoryblokRobotsTag" />
     </type>
-    <type name="MediaLounge\Storyblok\Controller\Index\Index">
-        <plugin name="add_alternates_hreflang" type="MediaLounge\Storyblok\Plugin\AddHreflang" />
-    </type>
     <type name="Magento\Theme\Block\Html\Breadcrumbs">
         <plugin name="medialounge_storyblok_breadcrumbs" type="MediaLounge\Storyblok\Plugin\StoryblokBreadcrumbs" />
     </type>

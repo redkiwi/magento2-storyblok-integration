@@ -23,17 +23,19 @@ class Config
     const WEBHOOK_SIGNATURE_VALIDATION_CONFIG_PATH = 'storyblok/general/webhook_signature_validation';
     const ASSET_PROXY_ENABLED_CONFIG_PATH = 'storyblok/general/asset_proxy_enabled';
     const ASSET_HOSTS_CONFIG_PATH = 'storyblok/general/asset_hosts';
+    const ADD_HREFLANG_CONFIG_PATH = 'storyblok/seo/add_hreflang';
 
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly StoreManagerInterface $storeManager
     ) {}
 
-    public function apiKey(): string
+    public function apiKey(?string $storeCode = null): string
     {
-        return $this->scopeConfig->getValue(
+        return (string)$this->scopeConfig->getValue(
             self::API_KEY_CONFIG_PATH,
-            ScopeInterface::SCOPE_STORE
+            ScopeInterface::SCOPE_STORE,
+            $storeCode
         );
     }
 
@@ -62,12 +64,12 @@ class Config
         );
     }
 
-    public function locale(): string
+    public function locale(?string $storeCode = null): string
     {
         return (string)$this->scopeConfig->getValue(
             'general/locale/code',
             ScopeInterface::SCOPE_STORE,
-            $this->storeManager->getStore()->getId()
+            $storeCode
         );
     }
 
@@ -151,6 +153,14 @@ class Config
             self::WEBHOOK_SIGNATURE_VALIDATION_CONFIG_PATH,
             ScopeInterface::SCOPE_STORE,
             $this->storeManager->getStore()->getId()
+        );
+    }
+
+    public function addHreflang(): bool
+    {
+        return (bool)$this->scopeConfig->getValue(
+            self::ADD_HREFLANG_CONFIG_PATH,
+            ScopeInterface::SCOPE_STORE
         );
     }
 

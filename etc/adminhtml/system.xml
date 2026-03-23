@@ -115,7 +115,14 @@
                         <field id="storyblok/general/enabled">1</field>
                     </depends>
                 </field>
-                <field id="add_canonical" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="add_hreflang" translate="label" type="select" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Add Hreflang Links</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="storyblok/general/enabled">1</field>
+                    </depends>
+                </field>
+                <field id="add_canonical" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Add Canonical Link</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <depends>

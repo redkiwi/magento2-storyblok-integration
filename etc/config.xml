@@ -7,6 +7,9 @@
                 <excluded_content_types></excluded_content_types>
                 <webhook_signature_validation>1</webhook_signature_validation>
             </general>
+            <seo>
+                <add_hreflang>1</add_hreflang>
+            </seo>
             <home_page>
                 <home_slug>home</home_slug>
             </home_page>
