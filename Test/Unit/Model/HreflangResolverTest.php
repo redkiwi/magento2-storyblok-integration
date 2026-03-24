@@ -41,11 +41,11 @@ class HreflangResolverTest extends TestCase
 
     public function testUnpublishedAlternatesAreSkipped(): void
     {
-        $this->setupStores(['en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en')]);
+        $this->setupStores(['en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en')]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => false, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => false],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -62,9 +62,9 @@ class HreflangResolverTest extends TestCase
     public function testPublishedAlternatesReturnCorrectUrlsAndHreflangs(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
-            'fr' => $this->makeStore(3, 'https://example.com/fr/', 'fr_FR', 'fr'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
+            'fr' => $this->makeStore(3, 'https://example.com/fr/', 'fr_FR', 'fr', 'fr'),
         ]);
 
         $fixture = require __DIR__ . '/../_files/story_with_alternates.php';
@@ -75,13 +75,9 @@ class HreflangResolverTest extends TestCase
             $byHreflang[$entry['hreflang']] = $entry['url'];
         }
 
-        // NL uses alternate full_slug (dimensions app) with dimension prefix stripped
         $this->assertSame('https://example.com/nl/home', $byHreflang['nl-nl']);
-        // FR uses alternate full_slug (dimensions app) with dimension prefix stripped
         $this->assertSame('https://example.com/fr/home', $byHreflang['fr-fr']);
-        // Self-referencing (en)
         $this->assertSame('https://example.com/en/home', $byHreflang['en-us']);
-        // x-default
         $this->assertSame('https://example.com/en/home', $byHreflang['x-default']);
     }
 
@@ -103,6 +99,10 @@ class HreflangResolverTest extends TestCase
             fn(?string $storeCode) => $storeCode === 'nl_store' ? 'key-b' : 'key-a'
         );
 
+        $this->config->method('slugPrefix')->willReturnCallback(
+            fn(?string $storeCode) => $storeCode === 'nl_store' ? 'nl' : 'en'
+        );
+
         $this->config->method('language')->willReturnCallback(
             fn(?string $storeCode) => $storeCode === 'nl_store' ? 'nl' : 'en'
         );
@@ -113,7 +113,7 @@ class HreflangResolverTest extends TestCase
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => true],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -130,14 +130,14 @@ class HreflangResolverTest extends TestCase
     public function testTranslatedSlugsFillGapsNotCoveredByAlternates(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
-            'fr' => $this->makeStore(3, 'https://example.com/fr/', 'fr_FR', 'fr'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
+            'fr' => $this->makeStore(3, 'https://example.com/fr/', 'fr_FR', 'fr', 'fr'),
         ]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => true],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -164,13 +164,13 @@ class HreflangResolverTest extends TestCase
     public function testXDefaultPresent(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
         ]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => true],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -191,13 +191,13 @@ class HreflangResolverTest extends TestCase
     public function testSelfReferencingEntryIncluded(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
         ]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => true],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -214,13 +214,13 @@ class HreflangResolverTest extends TestCase
     public function testDimensionPrefixStrippedFromSlugs(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
         ]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/about/team', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/about/team', 'published' => true],
             ],
             'full_slug' => 'en/about/team',
             'default_full_slug' => 'about/team',
@@ -235,7 +235,6 @@ class HreflangResolverTest extends TestCase
             $byHreflang[$entry['hreflang']] = $entry['url'];
         }
 
-        // Dimension prefix "nl" stripped, store base URL already includes /nl/
         $this->assertSame('https://example.com/nl/about/team', $byHreflang['nl-nl']);
         $this->assertSame('https://example.com/en/about/team', $byHreflang['en-us']);
     }
@@ -243,9 +242,9 @@ class HreflangResolverTest extends TestCase
     public function testTranslatedSlugsOnlyWithoutAlternates(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
-            'fr' => $this->makeStore(3, 'https://example.com/fr/', 'fr_FR', 'fr'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
+            'fr' => $this->makeStore(3, 'https://example.com/fr/', 'fr_FR', 'fr', 'fr'),
         ]);
 
         $story = [
@@ -268,6 +267,7 @@ class HreflangResolverTest extends TestCase
 
         $this->assertSame('https://example.com/nl/startpagina', $byHreflang['nl-nl']);
         $this->assertSame('https://example.com/fr/accueil', $byHreflang['fr-fr']);
+        // Self-referencing and x-default come from prefix map
         $this->assertArrayHasKey('en-us', $byHreflang, 'Self-referencing entry');
         $this->assertArrayHasKey('x-default', $byHreflang);
     }
@@ -275,13 +275,13 @@ class HreflangResolverTest extends TestCase
     public function testAlternatesOnlyWithoutTranslatedSlugs(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
         ]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => true],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -301,16 +301,16 @@ class HreflangResolverTest extends TestCase
         $this->assertArrayHasKey('x-default', $byHreflang);
     }
 
-    public function testAlternatesTakePrecedenceOverTranslatedSlugsForSameLanguage(): void
+    public function testAlternatesTakePrecedenceOverTranslatedSlugsForSamePrefix(): void
     {
         $this->setupStores([
-            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en'),
-            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl'),
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'nl' => $this->makeStore(2, 'https://example.com/nl/', 'nl_NL', 'nl', 'nl'),
         ]);
 
         $story = [
             'alternates' => [
-                ['full_slug' => 'nl/home', 'published' => true, 'lang' => 'nl'],
+                ['full_slug' => 'nl/home', 'published' => true],
             ],
             'full_slug' => 'en/home',
             'default_full_slug' => 'home',
@@ -342,8 +342,82 @@ class HreflangResolverTest extends TestCase
         $this->assertSame([], $this->resolver->resolve($story));
     }
 
+    public function testAlternatesWithoutLangFieldMatchByPrefix(): void
+    {
+        $this->setupStores([
+            'en' => $this->makeStore(1, 'https://example.com/en/', 'en_US', 'en', 'en'),
+            'de' => $this->makeStore(2, 'https://example.com/de/', 'de_DE', 'de', 'de'),
+        ]);
+
+        $story = [
+            'alternates' => [
+                ['full_slug' => 'de/ueber-uns', 'published' => true, 'slug' => 'ueber-uns'],
+            ],
+            'full_slug' => 'en/about-us',
+            'default_full_slug' => 'about-us',
+            'lang' => 'default',
+            'translated_slugs' => [],
+        ];
+
+        $result = $this->resolver->resolve($story);
+
+        $byHreflang = [];
+        foreach ($result as $entry) {
+            $byHreflang[$entry['hreflang']] = $entry['url'];
+        }
+
+        $this->assertSame('https://example.com/de/ueber-uns', $byHreflang['de-de']);
+        $this->assertSame('https://example.com/en/about-us', $byHreflang['en-us']);
+    }
+
+    public function testStoresWithoutSlugPrefixExcludedFromAlternates(): void
+    {
+        $nlStore = $this->createMock(Store::class);
+        $nlStore->method('getId')->willReturn(2);
+        $nlStore->method('getCode')->willReturn('nl_store');
+        $nlStore->method('getBaseUrl')->willReturn('https://example.com/nl/');
+
+        $enStore = $this->createMock(Store::class);
+        $enStore->method('getId')->willReturn(1);
+        $enStore->method('getCode')->willReturn('en_store');
+        $enStore->method('getBaseUrl')->willReturn('https://example.com/en/');
+
+        $this->storeManager->method('getStores')->willReturn([$enStore, $nlStore]);
+
+        $this->config->method('apiKey')->willReturn('test-api-key');
+
+        // nl_store has no slug prefix — field translations only
+        $this->config->method('slugPrefix')->willReturnCallback(
+            fn(?string $storeCode) => $storeCode === 'en_store' ? 'en' : ''
+        );
+
+        $this->config->method('language')->willReturnCallback(
+            fn(?string $storeCode) => $storeCode === 'nl_store' ? 'nl' : 'en'
+        );
+
+        $this->config->method('locale')->willReturnCallback(
+            fn(?string $storeCode) => $storeCode === 'nl_store' ? 'nl_NL' : 'en_US'
+        );
+
+        $story = [
+            'alternates' => [
+                ['full_slug' => 'nl/home', 'published' => true],
+            ],
+            'full_slug' => 'en/home',
+            'default_full_slug' => 'home',
+            'lang' => 'default',
+            'translated_slugs' => [],
+        ];
+
+        $result = $this->resolver->resolve($story);
+
+        $hreflangValues = array_column($result, 'hreflang');
+        // nl_store has no slug prefix, so nl alternate can't match
+        $this->assertNotContains('nl-nl', $hreflangValues);
+    }
+
     /**
-     * @param array<string, array{store: Store&MockObject, locale: string, language: string}> $stores
+     * @param array<string, array{store: Store&MockObject, locale: string, language: string, slugPrefix: string}> $stores
      */
     private function setupStores(array $stores): void
     {
@@ -378,12 +452,23 @@ class HreflangResolverTest extends TestCase
                 return '';
             }
         );
+
+        $this->config->method('slugPrefix')->willReturnCallback(
+            function (?string $storeCode) use ($stores) {
+                foreach ($stores as $info) {
+                    if ($info['store']->getCode() === $storeCode) {
+                        return $info['slugPrefix'];
+                    }
+                }
+                return '';
+            }
+        );
     }
 
     /**
-     * @return array{store: Store&MockObject, locale: string, language: string}
+     * @return array{store: Store&MockObject, locale: string, language: string, slugPrefix: string}
      */
-    private function makeStore(int $id, string $baseUrl, string $locale, string $language): array
+    private function makeStore(int $id, string $baseUrl, string $locale, string $language, string $slugPrefix): array
     {
         $store = $this->createMock(Store::class);
         $store->method('getId')->willReturn($id);
@@ -394,6 +479,7 @@ class HreflangResolverTest extends TestCase
             'store' => $store,
             'locale' => $locale,
             'language' => $language,
+            'slugPrefix' => $slugPrefix,
         ];
     }
 }

@@ -11,7 +11,7 @@ use Magento\Framework\UrlInterface;
 /**
  * @phpstan-type HreflangEntry array{url: string, hreflang: string}
  * @phpstan-type StoreMapEntry array{base_url: string, hreflang: string, store: Store}
- * @phpstan-type Alternate array{published?: bool, full_slug?: string, lang?: string}
+ * @phpstan-type Alternate array{published?: bool, full_slug?: string}
  * @phpstan-type TranslatedSlug array{lang?: string, path?: string}
  */
 class HreflangResolver
@@ -36,28 +36,31 @@ class HreflangResolver
             return [];
         }
 
-        $storeMap = $this->buildStoreMap($this->config->apiKey());
+        $currentApiKey = $this->config->apiKey();
+        $prefixMap = $this->buildPrefixMap($currentApiKey);
+        $languageMap = $this->buildLanguageMap($currentApiKey);
 
-        $resolved = $this->resolveFromAlternates($alternates, $storeMap);
-        $resolved = $this->resolveFromTranslatedSlugs($translatedSlugs, $storeMap, $resolved);
+        $resolved = $this->resolveFromAlternates($alternates, $prefixMap);
+        $resolved = $this->resolveFromTranslatedSlugs($translatedSlugs, $languageMap, $resolved);
 
         $hreflangs = array_values($resolved);
 
-        $this->addSelfReferencing($hreflangs, $story, $storeMap);
-        $this->addXDefault($hreflangs, $story, $storeMap);
+        $this->addSelfReferencing($hreflangs, $story, $prefixMap);
+        $this->addXDefault($hreflangs, $story, $prefixMap);
 
         return $hreflangs;
     }
 
     /**
      * Resolve hreflangs from dimension alternates (Storyblok Dimensions app).
+     * Matches the folder prefix from `full_slug` against store slug prefixes.
      *
      * @param Alternate[] $alternates
-     * @param array<string, StoreMapEntry> $storeMap
+     * @param array<string, StoreMapEntry> $prefixMap
      * @param array<string, HreflangEntry> $resolved
      * @return array<string, HreflangEntry>
      */
-    private function resolveFromAlternates(array $alternates, array $storeMap, array $resolved = []): array
+    private function resolveFromAlternates(array $alternates, array $prefixMap, array $resolved = []): array
     {
         foreach ($alternates as $alternate) {
             if (!($alternate['published'] ?? false)) {
@@ -69,15 +72,15 @@ class HreflangResolver
                 continue;
             }
 
-            $lang = $alternate['lang'] ?? '';
-            if (!$lang || !isset($storeMap[$lang])) {
+            $prefix = $this->extractPrefix($fullSlug);
+            if (!$prefix || !isset($prefixMap[$prefix])) {
                 continue;
             }
 
-            $storeInfo = $storeMap[$lang];
-            $slug = $this->stripDimensionPrefix($fullSlug, $lang);
+            $storeInfo = $prefixMap[$prefix];
+            $slug = $this->stripDimensionPrefix($fullSlug, $prefix);
 
-            $resolved[$lang] = [
+            $resolved[$prefix] = [
                 'url' => rtrim($storeInfo['base_url'], '/') . '/' . ltrim($slug, '/'),
                 'hreflang' => $storeInfo['hreflang'],
             ];
@@ -88,21 +91,22 @@ class HreflangResolver
 
     /**
      * Resolve hreflangs from translated slugs (Storyblok Translatable Slugs app).
-     * Skips languages already resolved by alternates.
+     * Matches the `lang` field against store language config.
+     * Skips keys already present in resolved.
      *
      * @param array<string, string> $translatedSlugs language => path
-     * @param array<string, StoreMapEntry> $storeMap
+     * @param array<string, StoreMapEntry> $languageMap
      * @param array<string, HreflangEntry> $resolved
      * @return array<string, HreflangEntry>
      */
-    private function resolveFromTranslatedSlugs(array $translatedSlugs, array $storeMap, array $resolved = []): array
+    private function resolveFromTranslatedSlugs(array $translatedSlugs, array $languageMap, array $resolved = []): array
     {
         foreach ($translatedSlugs as $lang => $path) {
-            if (isset($resolved[$lang]) || !isset($storeMap[$lang])) {
+            if (isset($resolved[$lang]) || !isset($languageMap[$lang])) {
                 continue;
             }
 
-            $storeInfo = $storeMap[$lang];
+            $storeInfo = $languageMap[$lang];
             $slug = $this->stripDimensionPrefix($path, $lang);
 
             $resolved[$lang] = [
@@ -134,11 +138,43 @@ class HreflangResolver
     }
 
     /**
-     * Collect stores belonging to the same Storyblok space, keyed by language.
+     * Collect stores keyed by slug prefix (for folder-based dimensions / alternates).
+     * Only includes stores that have a slug prefix configured.
      *
      * @return array<string, StoreMapEntry>
      */
-    private function buildStoreMap(string $currentApiKey): array
+    private function buildPrefixMap(string $currentApiKey): array
+    {
+        $map = [];
+
+        foreach ($this->storeManager->getStores() as $store) {
+            $storeCode = $store->getCode();
+
+            if ($this->config->apiKey($storeCode) !== $currentApiKey) {
+                continue;
+            }
+
+            $prefix = $this->config->slugPrefix($storeCode);
+            if (!$prefix) {
+                continue;
+            }
+
+            $map[$prefix] = [
+                'base_url' => $store->getBaseUrl(UrlInterface::URL_TYPE_LINK),
+                'hreflang' => strtolower(str_replace('_', '-', $this->config->locale($storeCode))),
+                'store' => $store,
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * Collect stores keyed by language (for field-level translations / translated slugs).
+     *
+     * @return array<string, StoreMapEntry>
+     */
+    private function buildLanguageMap(string $currentApiKey): array
     {
         $map = [];
 
@@ -163,12 +199,23 @@ class HreflangResolver
     }
 
     /**
-     * Remove the language dimension prefix since the store base URL already includes it.
+     * Extract the first path segment as the folder dimension prefix.
      */
-    private function stripDimensionPrefix(string $slug, string $lang): string
+    private function extractPrefix(string $slug): string
     {
         $slug = ltrim($slug, '/');
-        $prefix = $lang . '/';
+        $slashPos = strpos($slug, '/');
+
+        return $slashPos !== false ? substr($slug, 0, $slashPos) : '';
+    }
+
+    /**
+     * Remove the dimension prefix since the store base URL already includes it.
+     */
+    private function stripDimensionPrefix(string $slug, string $prefix): string
+    {
+        $slug = ltrim($slug, '/');
+        $prefix = $prefix . '/';
 
         if (str_starts_with($slug, $prefix)) {
             return substr($slug, strlen($prefix));
@@ -181,23 +228,20 @@ class HreflangResolver
      * Add an entry for the current page so search engines see the full set.
      *
      * @param HreflangEntry[] $hreflangs
-     * @param array{full_slug?: string, lang?: string} $story
-     * @param array<string, StoreMapEntry> $storeMap
+     * @param array{full_slug?: string} $story
+     * @param array<string, StoreMapEntry> $prefixMap
      */
-    private function addSelfReferencing(array &$hreflangs, array $story, array $storeMap): void
+    private function addSelfReferencing(array &$hreflangs, array $story, array $prefixMap): void
     {
-        $lang = $story['lang'] ?? 'default';
-        if ($lang === 'default') {
-            $lang = $this->findDefaultLanguage($storeMap);
-        }
+        $fullSlug = $story['full_slug'] ?? '';
+        $prefix = $this->extractPrefix($fullSlug) ?: $this->findCurrentStorePrefix($prefixMap);
 
-        if (!$lang || !isset($storeMap[$lang])) {
+        if (!$prefix || !isset($prefixMap[$prefix])) {
             return;
         }
 
-        $storeInfo = $storeMap[$lang];
-        $slug = $story['full_slug'] ?? '';
-        $slug = $this->stripDimensionPrefix($slug, $lang);
+        $storeInfo = $prefixMap[$prefix];
+        $slug = $this->stripDimensionPrefix($fullSlug, $prefix);
 
         $url = rtrim($storeInfo['base_url'], '/') . '/' . ltrim($slug, '/');
 
@@ -212,22 +256,23 @@ class HreflangResolver
      *
      * @param HreflangEntry[] $hreflangs
      * @param array{default_full_slug?: string, full_slug?: string} $story
-     * @param array<string, StoreMapEntry> $storeMap
+     * @param array<string, StoreMapEntry> $prefixMap
      */
-    private function addXDefault(array &$hreflangs, array $story, array $storeMap): void
+    private function addXDefault(array &$hreflangs, array $story, array $prefixMap): void
     {
         $defaultFullSlug = $story['default_full_slug'] ?? ($story['full_slug'] ?? '');
         if (!$defaultFullSlug) {
             return;
         }
 
-        $defaultLang = $this->findDefaultLanguage($storeMap);
-        if (!$defaultLang || !isset($storeMap[$defaultLang])) {
+        $prefix = $this->extractPrefix($defaultFullSlug) ?: $this->findCurrentStorePrefix($prefixMap);
+
+        if (!$prefix || !isset($prefixMap[$prefix])) {
             return;
         }
 
-        $storeInfo = $storeMap[$defaultLang];
-        $slug = $this->stripDimensionPrefix($defaultFullSlug, $defaultLang);
+        $storeInfo = $prefixMap[$prefix];
+        $slug = $this->stripDimensionPrefix($defaultFullSlug, $prefix);
 
         $url = rtrim($storeInfo['base_url'], '/') . '/' . ltrim($slug, '/');
 
@@ -238,20 +283,20 @@ class HreflangResolver
     }
 
     /**
-     * Find the language key that corresponds to the current store.
+     * Find the slug prefix for the current store.
      *
-     * @param array<string, StoreMapEntry> $storeMap
+     * @param array<string, StoreMapEntry> $prefixMap
      */
-    private function findDefaultLanguage(array $storeMap): string
+    private function findCurrentStorePrefix(array $prefixMap): string
     {
         $currentStoreId = $this->storeManager->getStore()->getId();
 
-        foreach ($storeMap as $lang => $info) {
+        foreach ($prefixMap as $prefix => $info) {
             if ((int)$info['store']->getId() === (int)$currentStoreId) {
-                return $lang;
+                return $prefix;
             }
         }
 
-        return array_key_first($storeMap) ?? '';
+        return array_key_first($prefixMap) ?? '';
     }
 }
