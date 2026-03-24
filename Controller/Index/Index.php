@@ -11,6 +11,7 @@ use Magento\Framework\View\Result\PageFactory;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\View\Page\Config as PageConfig;
 use MediaLounge\Storyblok\Model\Config;
 use MediaLounge\Storyblok\Model\HreflangResolver;
 
@@ -20,7 +21,8 @@ class Index extends Action implements HttpGetActionInterface
         Context $context,
         private readonly PageFactory $pageFactory,
         private readonly Config $config,
-        private readonly HreflangResolver $hreflangResolver
+        private readonly HreflangResolver $hreflangResolver,
+        private readonly PageConfig $pageConfig
     ) {
         parent::__construct($context);
     }
@@ -32,6 +34,8 @@ class Index extends Action implements HttpGetActionInterface
         if (!$story) {
             throw new NotFoundException(__('Story parameter is missing.'));
         }
+
+        $this->setRobotsTag($story);
 
         /** @var Page $resultPage */
         $resultPage = $this->pageFactory->create();
@@ -138,5 +142,17 @@ class Index extends Action implements HttpGetActionInterface
         );
 
         return $resultPage;
+    }
+
+    private function setRobotsTag(array $story): void
+    {
+        $index = !empty($story['content']['no_index']) ? 'NOINDEX' : 'INDEX';
+        $follow = !empty($story['content']['no_follow']) ? 'NOFOLLOW' : 'FOLLOW';
+
+        $robots = "$index,$follow";
+
+        if ($robots !== $this->pageConfig->getRobots()) {
+            $this->pageConfig->setRobots($robots);
+        }
     }
 }

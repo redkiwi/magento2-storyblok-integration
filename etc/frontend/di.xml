@@ -15,9 +15,6 @@
     <type name="Magento\Framework\View\Asset\AssetInterface">
         <plugin name="fix_asset_url_for_preview" type="MediaLounge\Storyblok\Plugin\FixAssetUrlForPreview" />
     </type>
-    <type name="MediaLounge\Storyblok\Controller\Index\Index">
-        <plugin name="modify_storyblok_robots" type="MediaLounge\Storyblok\Plugin\StoryblokRobotsTag" />
-    </type>
     <type name="Magento\Theme\Block\Html\Breadcrumbs">
         <plugin name="medialounge_storyblok_breadcrumbs" type="MediaLounge\Storyblok\Plugin\StoryblokBreadcrumbs" />
     </type>
