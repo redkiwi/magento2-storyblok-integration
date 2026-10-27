@@ -11,6 +11,8 @@ use Psr\Log\LoggerInterface;
 
 class StoryRepository
 {
+    private const NOT_FOUND_CACHE_LIFETIME = 900;
+
     private \Storyblok\Client $storyblokClient;
 
     public function __construct(
@@ -41,16 +43,7 @@ class StoryRepository
             }
 
             if (!$data || $bypassCache) {
-                $this->storyblokClient->language($language);
-                $response = $this->storyblokClient->getStoryBySlug($slug);
-                $responseBody = $response->getBody();
-                $data = $this->serializer->serialize($responseBody);
-
-                if (!$bypassCache && !empty($responseBody['story'])) {
-                    $this->cache->save($data, $identifier, [
-                        "storyblok_{$responseBody['story']['id']}"
-                    ]);
-                }
+                $data = $this->fetchStory($slug, $language, $identifier, $bypassCache);
             }
 
             $responseData = $this->serializer->unserialize($data);
@@ -66,7 +59,40 @@ class StoryRepository
                 'exception' => $e->getMessage(),
                 'code' => $e->getCode()
             ]);
+
+            if (!$bypassCache) {
+                $this->saveNotFound($slug, $identifier);
+            }
+
             return [];
         }
+    }
+
+    private function fetchStory(string $slug, string $language, string $identifier, bool $bypassCache): string
+    {
+        $this->storyblokClient->language($language);
+        $response = $this->storyblokClient->getStoryBySlug($slug);
+        $responseBody = $response->getBody();
+        $data = (string)$this->serializer->serialize($responseBody);
+
+        if (!$bypassCache && !empty($responseBody['story'])) {
+            $this->cache->save($data, $identifier, [
+                "storyblok_{$responseBody['story']['id']}"
+            ]);
+        } elseif (!$bypassCache) {
+            $this->saveNotFound($slug, $identifier);
+        }
+
+        return $data;
+    }
+
+    private function saveNotFound(string $slug, string $identifier): void
+    {
+        $this->cache->save(
+            (string)$this->serializer->serialize([]),
+            $identifier,
+            ["storyblok_slug_{$slug}"],
+            self::NOT_FOUND_CACHE_LIFETIME
+        );
     }
 }

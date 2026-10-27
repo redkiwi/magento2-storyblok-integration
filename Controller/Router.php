@@ -12,6 +12,8 @@ use MediaLounge\Storyblok\Model\StoryRepository;
 
 class Router implements RouterInterface
 {
+    private const FILE_PATH_PATTERN = '#\.(ico|png|jpe?g|gif|svg|webp|xml|txt|php|js|css|map|json)$#i';
+
     public function __construct(
         private readonly ActionFactory $actionFactory,
         private readonly StoryRepository $storyRepository,
@@ -21,6 +23,10 @@ class Router implements RouterInterface
     public function match(RequestInterface $request): ?ActionInterface
     {
         $identifier = trim($request->getPathInfo(), '/');
+        if (preg_match(self::FILE_PATH_PATTERN, $identifier)) {
+            return null;
+        }
+
         $bypassCache = (bool)$request->getParam('_storyblok');
         $story = $this->storyRepository->getStoryBySlug($identifier, $bypassCache);
 
