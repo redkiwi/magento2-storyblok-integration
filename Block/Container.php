@@ -28,7 +28,7 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
 
     public function getCacheLifetime()
     {
-        return parent::getCacheLifetime() ?: 3600;
+        return parent::getCacheLifetime() ?: 86400;
     }
 
     public function getIdentities(): array
