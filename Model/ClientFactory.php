@@ -25,6 +25,7 @@ class ClientFactory
         $data = array_merge(
             [
                 'apiKey' => $this->config->apiKey(),
+                'ssl' => true,
             ],
             $data
         );
