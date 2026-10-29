@@ -3,6 +3,7 @@ namespace MediaLounge\Storyblok\Test\Unit\Block;
 
 use Storyblok\ApiException;
 use PHPUnit\Framework\TestCase;
+use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\App\State;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\View\FileSystem;
@@ -356,5 +357,28 @@ class ContainerTest extends TestCase
             "storyblok_{$fixtureStoryArray['story']['id']}",
             $block->getCacheKeyInfo()
         );
+    }
+
+    public function testTheEditorPreviewIsNeverCached(): void
+    {
+        $this->assertNull($this->createBlockForAction('storyblok_index_ajax')->getCacheLifetime());
+    }
+
+    public function testAStoryPageIsCached(): void
+    {
+        $this->assertSame(86400, $this->createBlockForAction('storyblok_index_index')->getCacheLifetime());
+    }
+
+    private function createBlockForAction(string $fullActionName): Container
+    {
+        $requestMock = $this->createMock(HttpRequest::class);
+        $requestMock->method('getFullActionName')->willReturn($fullActionName);
+        $this->contextMock->method('getRequest')->willReturn($requestMock);
+
+        return $this->objectManagerHelper->getObject(Container::class, [
+            'viewFileSystem' => $this->viewFileSystemMock,
+            'context' => $this->contextMock,
+            'data' => ['story' => ['id' => 123, 'content' => ['component' => 'page', '_uid' => 'a']]],
+        ]);
     }
 }

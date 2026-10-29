@@ -63,6 +63,10 @@ The storefront endpoints of this module are public, so each one only trusts what
   let `/storyblok/index/index/?story[content][…]=…` render, and cache under a real story id, whatever content
   the request carried. Anything forwarding to this controller must set the story with `setParams()`, as
   `Controller\Router` does.
+- **The visual editor's live preview is never cached.** `POST /storyblok/index/ajax` renders whatever story
+  it is posted, anonymously and without a form key, while `Block\Container` keys `block_html` on little more
+  than the story id. On `storyblok_index_ajax` the container's cache lifetime is `null`, so a forged story
+  carrying a real id cannot be stored as that story's markup.
 
 ## Videos
 

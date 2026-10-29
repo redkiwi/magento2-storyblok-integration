@@ -11,9 +11,12 @@ use MediaLounge\Storyblok\Model\StoryRepository;
 use MediaLounge\Storyblok\Model\SpaceHashProvider;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\App\State;
+use Magento\Framework\App\Request\Http as HttpRequest;
 
 class Container extends \Magento\Framework\View\Element\Template implements IdentityInterface
 {
+    private const EDITOR_PREVIEW_ACTION = 'storyblok_index_ajax';
+
     public function __construct(
         private readonly FileSystem $viewFileSystem,
         private readonly StoryRepository $storyRepository,
@@ -28,6 +31,14 @@ class Container extends \Magento\Framework\View\Element\Template implements Iden
 
     public function getCacheLifetime()
     {
+        // The visual editor's live preview renders whatever story it is posted, anonymously and without a
+        // form key, and the cache key holds little more than the story id - so a forged story carrying a real
+        // id would be stored as that story's markup and served to everyone.
+        $request = $this->getRequest();
+        if ($request instanceof HttpRequest && $request->getFullActionName() === self::EDITOR_PREVIEW_ACTION) {
+            return null;
+        }
+
         return parent::getCacheLifetime() ?: 86400;
     }
 
