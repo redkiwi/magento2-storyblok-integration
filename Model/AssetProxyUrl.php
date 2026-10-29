@@ -12,7 +12,8 @@ class AssetProxyUrl
 
     public function __construct(
         private readonly Config $config,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly SpaceIds $spaceIds
     ) {}
 
     public function rewriteUrl(string $storyblokUrl): string
@@ -61,14 +62,26 @@ class AssetProxyUrl
         return (bool)preg_match('#(https?:)?//' . $hostPattern . '/f/#', $url);
     }
 
+    /**
+     * Only an asset of one of this installation's own spaces: the proxy serves the file from the shop's
+     * origin, so any space's `f/` path would let an SVG with a script from anyone's free space run as the shop.
+     * Dot segments and encoded separators are refused first, because the HTTP client resolves
+     * `f/{ours}/../../f/{theirs}/x.svg` before fetching.
+     */
     public function decodePath(string $encodedPath): ?string
     {
         $decoded = $this->decodeBin($encodedPath);
-        if ($decoded === '' || !str_starts_with($decoded, 'f/')) {
+        if (
+            $decoded === ''
+            || str_contains($decoded, '\\')
+            || preg_match('#%(2e|2f|5c)#i', $decoded)
+            || array_intersect(explode('/', $decoded), ['.', '..']) !== []
+            || !preg_match('#^f/(\d+)/#', $decoded, $matches)
+        ) {
             return null;
         }
 
-        return $decoded;
+        return in_array($matches[1], $this->spaceIds->get(), true) ? $decoded : null;
     }
 
     public function encodePath(string $data): string

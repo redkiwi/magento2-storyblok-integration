@@ -50,6 +50,8 @@ Two integration points:
 - **Output plugin** — Automatically rewrites all Storyblok asset URLs in Element block HTML output (images, WYSIWYG, everything)
 - **`ViewModel\AssetProxy`** — For use in custom `.phtml` templates outside Storyblok blocks via `getProxiedUrl($url)`
 
+Only assets of the spaces behind the configured API tokens are proxied — see [Security](#security).
+
 ### Cache Behavior
 
 Proxied assets are served with a 1-year cache header. Since Storyblok asset URLs contain content hashes, they are effectively immutable — a new asset produces a new URL.
@@ -67,6 +69,12 @@ The storefront endpoints of this module are public, so each one only trusts what
   it is posted, anonymously and without a form key, while `Block\Container` keys `block_html` on little more
   than the story id. On `storyblok_index_ajax` the container's cache lifetime is `null`, so a forged story
   carrying a real id cannot be stored as that story's markup.
+- **The asset proxy serves only this installation's own spaces.** `Model\AssetProxyUrl::decodePath()` accepted
+  any `f/…` path, so an SVG with a script uploaded to anyone's free Storyblok space was served from the shop's
+  origin and cached for a year. A path must now be `f/{space id}/…` for a space behind one of the stores' API
+  tokens (`Model\SpaceIds`, resolved via `/v2/cdn/spaces/me`, cached a week per token, failures uncached),
+  and dot segments, backslashes and encoded `.` `/` `\` are refused first — the HTTP client resolves
+  `f/{ours}/../../f/{theirs}/x.svg` before fetching. A refused path is a 404 and logs *Invalid encoded path*.
 
 ## Videos
 

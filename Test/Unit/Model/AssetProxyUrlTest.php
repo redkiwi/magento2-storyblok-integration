@@ -8,6 +8,8 @@ use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use MediaLounge\Storyblok\Model\AssetProxyUrl;
 use MediaLounge\Storyblok\Model\Config;
+use MediaLounge\Storyblok\Model\SpaceIds;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -15,6 +17,7 @@ class AssetProxyUrlTest extends TestCase
 {
     private Config|MockObject $config;
     private StoreManagerInterface|MockObject $storeManager;
+    private SpaceIds|MockObject $spaceIds;
     private AssetProxyUrl $assetProxyUrl;
 
     protected function setUp(): void
@@ -28,7 +31,10 @@ class AssetProxyUrlTest extends TestCase
 
         $this->config->method('assetHosts')->willReturn(['a.storyblok.com']);
 
-        $this->assetProxyUrl = new AssetProxyUrl($this->config, $this->storeManager);
+        $this->spaceIds = $this->createMock(SpaceIds::class);
+        $this->spaceIds->method('get')->willReturn(['12345', '321820']);
+
+        $this->assetProxyUrl = new AssetProxyUrl($this->config, $this->storeManager, $this->spaceIds);
     }
 
     public function testRewriteUrlWhenEnabled(): void
@@ -121,6 +127,35 @@ class AssetProxyUrlTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function testDecodePathRefusesAForeignSpace(): void
+    {
+        $this->assertNull($this->assetProxyUrl->decodePath($this->assetProxyUrl->encodePath('f/999/x/y/evil.svg')));
+    }
+
+    /**
+     * @dataProvider traversalPaths
+     */
+    #[DataProvider('traversalPaths')]
+    public function testDecodePathRefusesTraversalPastTheSpaceCheck(string $path): void
+    {
+        $this->assertNull($this->assetProxyUrl->decodePath($this->assetProxyUrl->encodePath($path)));
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function traversalPaths(): array
+    {
+        return [
+            'dot segments' => ['f/12345/../../f/999/evil.svg'],
+            'single dot' => ['f/12345/./x.svg'],
+            'encoded dots' => ['f/12345/%2e%2e/%2E%2E/f/999/evil.svg'],
+            'encoded slash' => ['f/12345/..%2f..%2ff/999/evil.svg'],
+            'backslash' => ['f/12345/..\\..\\f/999/evil.svg'],
+            'no space segment' => ['f/12345'],
+        ];
+    }
+
     public function testRoundTrip(): void
     {
         $this->config->method('isAssetProxyEnabled')->willReturn(true);
@@ -186,7 +221,7 @@ class AssetProxyUrlTest extends TestCase
         $config->method('assetHosts')->willReturn(['a.storyblok.com', 'a2.storyblok.com']);
         $config->method('isAssetProxyEnabled')->willReturn(true);
 
-        $proxyUrl = new AssetProxyUrl($config, $this->storeManager);
+        $proxyUrl = new AssetProxyUrl($config, $this->storeManager, $this->spaceIds);
 
         $url1 = 'https://a.storyblok.com/f/12345/image.jpg';
         $url2 = 'https://a2.storyblok.com/f/12345/image.jpg';
@@ -204,7 +239,7 @@ class AssetProxyUrlTest extends TestCase
         $config->method('assetHosts')->willReturn(['a.storyblok.com', 'a2.storyblok.com']);
         $config->method('isAssetProxyEnabled')->willReturn(true);
 
-        $proxyUrl = new AssetProxyUrl($config, $this->storeManager);
+        $proxyUrl = new AssetProxyUrl($config, $this->storeManager, $this->spaceIds);
 
         $html = '<img src="https://a.storyblok.com/f/1/img.jpg" /><img src="https://a2.storyblok.com/f/2/img.jpg" />';
         $result = $proxyUrl->rewriteHtml($html);
@@ -219,7 +254,7 @@ class AssetProxyUrlTest extends TestCase
         $config = $this->createMock(Config::class);
         $config->method('assetHosts')->willReturn(['a.storyblok.com', 'a-us.storyblok.com']);
 
-        $proxyUrl = new AssetProxyUrl($config, $this->storeManager);
+        $proxyUrl = new AssetProxyUrl($config, $this->storeManager, $this->spaceIds);
 
         $this->assertTrue($proxyUrl->isStoryblokAssetUrl('https://a.storyblok.com/f/123/file.pdf'));
         $this->assertTrue($proxyUrl->isStoryblokAssetUrl('https://a-us.storyblok.com/f/123/file.pdf'));
