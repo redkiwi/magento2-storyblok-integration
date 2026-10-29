@@ -11,6 +11,7 @@ use Magento\Framework\View\Result\PageFactory;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\View\Page\Config as PageConfig;
 use MediaLounge\Storyblok\Model\Config;
 use MediaLounge\Storyblok\Model\HreflangResolver;
@@ -29,9 +30,14 @@ class Index extends Action implements HttpGetActionInterface
 
     public function execute(): ResultInterface
     {
-        $story = $this->getRequest()->getParam('story', null);
+        $request = $this->getRequest();
 
-        if (!$story) {
+        // A user param only: getParam() falls back to the query string and the POST body, so
+        // `?story[content][…]=…` would render (and cache under a real story id) whatever the request carries.
+        // The Router sets the story with setParams(); anything else forwarding here must do the same.
+        $story = $request instanceof HttpRequest ? $request->getUserParam('story') : null;
+
+        if (!is_array($story) || $story === []) {
             throw new NotFoundException(__('Story parameter is missing.'));
         }
 

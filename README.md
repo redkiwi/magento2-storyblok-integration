@@ -54,6 +54,16 @@ Two integration points:
 
 Proxied assets are served with a 1-year cache header. Since Storyblok asset URLs contain content hashes, they are effectively immutable — a new asset produces a new URL.
 
+## Security
+
+The storefront endpoints of this module are public, so each one only trusts what it can verify:
+
+- **Story pages render only a story set by the router.** `Controller\Index\Index` reads `story` as a request
+  *user param* (`getUserParam()`), never through `getParam()`, which falls back to the query string — that
+  let `/storyblok/index/index/?story[content][…]=…` render, and cache under a real story id, whatever content
+  the request carried. Anything forwarding to this controller must set the story with `setParams()`, as
+  `Controller\Router` does.
+
 ## Videos
 
 If you want to see it in action you can watch our [YouTube playlist](https://www.youtube.com/watch?v=I8_TCyOCKAo&list=PLn3mpLgxMjLSRWmmmf0RRX8wEVgv4dZ0k).

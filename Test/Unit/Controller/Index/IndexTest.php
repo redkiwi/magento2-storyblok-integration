@@ -9,7 +9,7 @@ use Magento\Framework\View\Page\Title;
 use Magento\Framework\View\Page\Config;
 use Magento\Framework\View\Result\Page;
 use Magento\Framework\App\Action\Context;
-use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\View\LayoutInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use Magento\Framework\View\Result\PageFactory;
@@ -27,7 +27,7 @@ class IndexTest extends TestCase
     private BlockInterface&MockObject $blockMock;
     private Title&MockObject $titleMock;
     private Config&MockObject $configMock;
-    private RequestInterface&MockObject $requestMock;
+    private HttpRequest&MockObject $requestMock;
     private PageFactory&MockObject $pageFactoryMock;
     private StoryblokConfig&MockObject $storyblokConfigMock;
     private HreflangResolver&MockObject $hreflangResolverMock;
@@ -45,7 +45,7 @@ class IndexTest extends TestCase
             ->with('storyblok.page')
             ->willReturn($this->blockMock);
 
-        $this->requestMock = $this->getMockForAbstractClass(RequestInterface::class);
+        $this->requestMock = $this->createMock(HttpRequest::class);
 
         $this->contextMock = $this->getMockBuilder(Context::class)
             ->disableOriginalConstructor()
@@ -92,8 +92,8 @@ class IndexTest extends TestCase
 
         $this->requestMock
             ->expects($this->atLeastOnce())
-            ->method('getParam')
-            ->with('story', null)
+            ->method('getUserParam')
+            ->with('story')
             ->willReturn($fixtureStoryArray['story']);
 
         $this->titleMock
@@ -124,9 +124,54 @@ class IndexTest extends TestCase
 
         $this->requestMock
             ->expects($this->atLeastOnce())
-            ->method('getParam')
-            ->with('story', null)
+            ->method('getUserParam')
+            ->with('story')
             ->willReturn(null);
+
+        $controller = $this->objectManagerHelper->getObject(Index::class, [
+            'context' => $this->contextMock,
+            'pageFactory' => $this->pageFactoryMock,
+            'config' => $this->storyblokConfigMock,
+            'hreflangResolver' => $this->hreflangResolverMock,
+        ]);
+
+        $controller->execute();
+    }
+
+    public function testStoryFromTheQueryStringIsRefused(): void
+    {
+        $this->expectException(NotFoundException::class);
+
+        // A forged `?story[…]` lands in getParam() but never in the user params the router sets.
+        $this->requestMock
+            ->method('getParam')
+            ->willReturn(['id' => 1, 'name' => 'forged', 'content' => ['component' => 'page']]);
+        $this->requestMock
+            ->expects($this->atLeastOnce())
+            ->method('getUserParam')
+            ->with('story')
+            ->willReturn(null);
+
+        $controller = $this->objectManagerHelper->getObject(Index::class, [
+            'context' => $this->contextMock,
+            'pageFactory' => $this->pageFactoryMock,
+            'config' => $this->storyblokConfigMock,
+            'hreflangResolver' => $this->hreflangResolverMock,
+        ]);
+
+        $controller->execute();
+    }
+
+    public function testAStringStoryFromAPathParamIsRefused(): void
+    {
+        $this->expectException(NotFoundException::class);
+
+        // `/storyblok/index/index/story/x` makes the standard router set a string user param.
+        $this->requestMock
+            ->expects($this->atLeastOnce())
+            ->method('getUserParam')
+            ->with('story')
+            ->willReturn('x');
 
         $controller = $this->objectManagerHelper->getObject(Index::class, [
             'context' => $this->contextMock,
@@ -144,8 +189,8 @@ class IndexTest extends TestCase
 
         $this->requestMock
             ->expects($this->atLeastOnce())
-            ->method('getParam')
-            ->with('story', null)
+            ->method('getUserParam')
+            ->with('story')
             ->willReturn($fixtureStoryArray['story']);
 
         $this->titleMock
