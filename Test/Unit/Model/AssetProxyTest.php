@@ -56,6 +56,9 @@ class AssetProxyTest extends TestCase
             ->with('invalidhex')
             ->willReturn(null);
 
+        $this->logger->expects($this->never())->method('error');
+        $this->logger->expects($this->once())->method('info');
+
         $result = $this->assetProxy->fetch('invalidhex');
 
         $this->assertNull($result);
@@ -81,24 +84,52 @@ class AssetProxyTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function testFetchCurlExceptionReturnsNullAndLogsError(): void
+    public function testFetchCurlExceptionRetriesOnceThenWarns(): void
     {
         $this->assetProxyUrl->method('decodePath')
             ->with('662f31323334352f696d6167652e6a7067')
             ->willReturn('f/12345/image.jpg');
 
-        $this->curl->method('get')->willThrowException(new \Exception('Connection timeout'));
+        $this->curl->expects($this->exactly(2))->method('get')->willThrowException(new \Exception('Connection timeout'));
 
+        $this->logger->expects($this->never())->method('error');
         $this->logger->expects($this->once())
-            ->method('error')
+            ->method('warning')
             ->with('[Storyblok Asset Proxy Error] Error during request', [
                 'url' => 'https://a.storyblok.com/f/12345/image.jpg',
                 'exception' => 'Connection timeout',
+                'attempts' => 2,
             ]);
 
         $result = $this->assetProxy->fetch('662f31323334352f696d6167652e6a7067');
 
         $this->assertNull($result);
+    }
+
+    public function testFetchSucceedsWhenTheRetrySucceeds(): void
+    {
+        $this->assetProxyUrl->method('decodePath')
+            ->with('662f31323334352f696d6167652e6a7067')
+            ->willReturn('f/12345/image.jpg');
+
+        $calls = 0;
+        $this->curl->expects($this->exactly(2))->method('get')->willReturnCallback(
+            static function () use (&$calls): void {
+                if (++$calls === 1) {
+                    throw new \Exception('Connection timeout');
+                }
+            }
+        );
+        $this->curl->method('getStatus')->willReturn(200);
+        $this->curl->method('getBody')->willReturn('binary-data');
+        $this->curl->method('getHeaders')->willReturn(['Content-Type' => 'image/jpeg']);
+
+        $this->logger->expects($this->never())->method('warning');
+        $this->logger->expects($this->never())->method('error');
+
+        $result = $this->assetProxy->fetch('662f31323334352f696d6167652e6a7067');
+
+        $this->assertSame('binary-data', $result['body']);
     }
 
     public function testFetchUsesPrimaryHost(): void
